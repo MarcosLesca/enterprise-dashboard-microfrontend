@@ -1,7 +1,7 @@
 {
   "name": "react-analytics-react-analytics",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/react-analytics/react-analytics/src",
+  "sourceRoot": "react-analytics/src",
   "projectType": "application",
   "tags": [],
   "targets": {
@@ -10,7 +10,7 @@
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/react-analytics/react-analytics"
+        "outputPath": "dist/react-analytics"
       },
       "configurations": {
         "development": {
@@ -57,7 +57,7 @@
       "executor": "@nx/vite:test",
       "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "reportsDirectory": "../../../coverage/apps/react-analytics/react-analytics"
+        "reportsDirectory": "../../coverage/react-analytics"
       }
     },
     "lint": {
