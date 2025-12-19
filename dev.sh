@@ -140,41 +140,53 @@ setup_npm() {
     fi
 }
 
-# Try to start frontend (with multiple fallbacks)
+# Try to start frontend (with Nx monorepo support)
 start_frontend() {
     local name=$1
     local port=$2
     local path=$3
+    local project_name=$4
     
     print "🚀 Starting $name..." $YELLOW
-    cd "$path"
     
-    # Check if we have the necessary dependencies
-    if [ ! -f "node_modules/.package-lock.json" ] && [ "$path" != "." ]; then
+    # Check if we have root dependencies
+    if [ ! -f "node_modules/.package-lock.json" ]; then
         print "⚠️ Dependencies incomplete for $name" $YELLOW
-        cd ..
         return 1
     fi
     
-    # Try npm start
-    if [ -f "package.json" ]; then
-        timeout 10 npm start 2>/dev/null &
+    # For Nx monorepo, use nx serve
+    if [ -n "$project_name" ]; then
+        print "📦 Using Nx to start $project_name..." $BLUE
+        timeout 30 npx nx serve "$project_name" 2>/dev/null &
         PID=$!
-        sleep 8
+        sleep 15
+    else
+        # Fallback to directory-based approach
+        cd "$path"
         
-        if curl -s "http://localhost:$port" >/dev/null; then
-            print "✅ $name started!" $GREEN
-            print "📱 $name: http://localhost:$port" $BLUE
-            echo $PID > "/tmp/frontend_$(echo $name | tr ' ' '_').pid"
-            cd ..
-            return 0
+        # Try npm start
+        if [ -f "package.json" ]; then
+            timeout 10 npm start 2>/dev/null &
+            PID=$!
+            sleep 8
         else
-            kill $PID 2>/dev/null || true
+            cd ..
+            return 1
         fi
+        
+        cd ..
     fi
     
-    cd ..
-    return 1
+    if curl -s "http://localhost:$port" >/dev/null; then
+        print "✅ $name started!" $GREEN
+        print "📱 $name: http://localhost:$port" $BLUE
+        echo $PID > "/tmp/frontend_$(echo $name | tr ' ' '_').pid"
+        return 0
+    else
+        kill $PID 2>/dev/null || true
+        return 1
+    fi
 }
 
 # Show service status
@@ -257,8 +269,8 @@ case "${1:-help}" in
     "frontend")
         if setup_npm; then
             print "\n🚀 Starting frontend applications..." $YELLOW
-            start_frontend "Angular Shell" 4200 "angular-shell"
-            start_frontend "React Analytics" 4201 "react-analytics/react-analytics"
+            start_frontend "Angular Shell" 4200 "" "angular-shell"
+            start_frontend "React Analytics" 4201 "" "react-analytics-react-analytics"
         fi
         ;;
         
@@ -267,8 +279,8 @@ case "${1:-help}" in
         if start_django; then
             print "\n🚀 Setting up frontend..." $YELLOW
             if setup_npm; then
-                start_frontend "Angular Shell" 4200 "angular-shell"
-                start_frontend "React Analytics" 4201 "react-analytics/react-analytics"
+                start_frontend "Angular Shell" 4200 "" "angular-shell"
+                start_frontend "React Analytics" 4201 "" "react-analytics-react-analytics"
             fi
         fi
         

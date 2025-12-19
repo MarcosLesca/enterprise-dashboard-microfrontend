@@ -1,0 +1,99 @@
+version: "3.8"
+
+services:
+  # Django API
+  django-api:
+    build:
+      context: ./django-api
+      dockerfile: Dockerfile.prod
+    container_name: enterprise-django-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=sqlite:///db.sqlite3
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+    volumes:
+      - django_data:/app/data
+    restart: unless-stopped
+    networks:
+      - enterprise-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Angular Shell
+  angular-shell:
+    build:
+      context: ./angular-shell
+      dockerfile: Dockerfile.prod
+    container_name: enterprise-angular-shell
+    ports:
+      - "4200:80"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - django-api
+    restart: unless-stopped
+    networks:
+      - enterprise-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # React Analytics
+  react-analytics:
+    build:
+      context: ./react-analytics
+      dockerfile: Dockerfile.prod
+    container_name: enterprise-react-analytics
+    ports:
+      - "4201:80"
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - django-api
+    restart: unless-stopped
+    networks:
+      - enterprise-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy (Optional - for production)
+  nginx:
+    image: nginx:alpine
+    container_name: enterprise-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - angular-shell
+      - react-analytics
+      - django-api
+    restart: unless-stopped
+    networks:
+      - enterprise-network
+    profiles:
+      - production
+
+volumes:
+  django_data:
+    driver: local
+
+networks:
+  enterprise-network:
+    driver: bridge

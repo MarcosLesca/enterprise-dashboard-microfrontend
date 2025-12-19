@@ -14,10 +14,7 @@
     },
     ".eslintrc.json": "*"
   },
-  "projects": {
-    "angular-shell": "angular-shell",
-    "react-analytics-react-analytics": "react-analytics/react-analytics"
-  },
+
   "targetDefaults": {
     "build": {
       "dependsOn": ["^build"],

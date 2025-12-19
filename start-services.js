@@ -2,7 +2,6 @@
 
 const { spawn, exec } = require("child_process");
 const path = require("path");
-const fs = require("fs");
 
 // Detectar el SO
 const isWindows = process.platform === "win32";
@@ -22,6 +21,23 @@ const colors = {
 
 function log(message, color = "reset") {
   console.log(`${colors[color]}${message}${colors.reset}`);
+}
+
+// Función para verificar si Django ya está corriendo
+function checkDjangoRunning() {
+  return new Promise((resolve) => {
+    const checkCmd = isWindows
+      ? "curl -s http://localhost:8000 >nul 2>&1"
+      : "curl -s http://localhost:8000 >/dev/null 2>&1";
+
+    exec(checkCmd, (error) => {
+      if (error) {
+        resolve(false); // No está corriendo
+      } else {
+        resolve(true); // Está corriendo
+      }
+    });
+  });
 }
 
 // Función para ejecutar comandos
@@ -103,8 +119,8 @@ function checkDependencies() {
               resolve();
             }
           });
-        }),
-    ),
+        })
+    )
   );
 }
 
@@ -130,29 +146,37 @@ function installDependencies() {
 // Función para configurar entorno virtual de Python
 function setupPythonEnv() {
   return new Promise((resolve) => {
-    const venvCmd = isWindows
-      ? "if not exist venv python -m venv venv && venv\\Scripts\\activate && pip install -r requirements.txt"
-      : "test ! -d venv && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt";
-
-    log("\n🐍 Setting up Python environment...", "yellow");
-
-    const pythonSetup = spawn(
-      shell,
-      isWindows ? ["/c", venvCmd] : ["-c", venvCmd],
-      {
-        cwd: path.join(__dirname, "django-api"),
-        stdio: "inherit",
-      },
-    );
-
-    pythonSetup.on("close", (code) => {
-      if (code === 0) {
-        log("✅ Python environment ready", "green");
+    checkDjangoRunning().then((isRunning) => {
+      if (isRunning) {
+        log("✅ Django API already running", "green");
         resolve();
-      } else {
-        log("❌ Failed to setup Python environment", "red");
-        process.exit(1);
+        return;
       }
+
+      const venvCmd = isWindows
+        ? "if not exist venv python -m venv venv && venv\\Scripts\\activate && pip install -r requirements.txt"
+        : "test ! -d venv && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt";
+
+      log("\n🐍 Setting up Python environment...", "yellow");
+
+      const pythonSetup = spawn(
+        shell,
+        isWindows ? ["/c", venvCmd] : ["-c", venvCmd],
+        {
+          cwd: path.join(__dirname, "django-api"),
+          stdio: "inherit",
+        }
+      );
+
+      pythonSetup.on("close", (code) => {
+        if (code === 0) {
+          log("✅ Python environment ready", "green");
+          resolve();
+        } else {
+          log("❌ Failed to setup Python environment", "red");
+          process.exit(1);
+        }
+      });
     });
   });
 }
@@ -163,7 +187,7 @@ async function main() {
 
   log(
     "\n🎯 Enterprise Dashboard - Micro-frontend Development Server",
-    "bright",
+    "bright"
   );
   log("=".repeat(60), "cyan");
 
@@ -177,34 +201,48 @@ async function main() {
       log("\n🚀 Starting all services...", "bright");
       log("⏳ This will take a moment...", "yellow");
 
-      // Iniciar Django API
-      const djangoCmd = isWindows
-        ? "venv\\Scripts\\activate && python manage.py runserver 0.0.0.0:8000"
-        : "source venv/bin/activate && python manage.py runserver 0.0.0.0:8000";
+      checkDjangoRunning().then((isRunning) => {
+        if (!isRunning) {
+          // Iniciar Django API solo si no está corriendo
+          const djangoCmd = isWindows
+            ? "venv\\Scripts\\activate && python manage.py runserver 0.0.0.0:8000"
+            : "source venv/bin/activate && python manage.py runserver 0.0.0.0:8000";
 
-      await runCommand(
-        djangoCmd,
-        path.join(__dirname, "django-api"),
-        "Django API",
-        8000,
-      );
+          runCommand(
+            djangoCmd,
+            path.join(__dirname, "django-api"),
+            "Django API",
+            8000
+          );
+        } else {
+          log("✅ Django API already running, skipping...", "green");
+        }
+      });
 
       // Esperar un poco para que Django inicie
       setTimeout(async () => {
         // Iniciar Angular Shell
         await runCommand(
-          "npx ng serve",
-          path.join(__dirname, "angular-shell"),
+          "cd angular-shell && npx vite --port=4200",
+          __dirname,
           "Angular Shell",
-          4200,
+          4200
         );
 
         // Iniciar React Analytics
         await runCommand(
-          "npx nx serve react-analytics-react-analytics",
+          "cd react-analytics/react-analytics && npx vite --port=4201",
           __dirname,
           "React Analytics",
-          4201,
+          4201
+        );
+
+        // Iniciar React Analytics
+        await runCommand(
+          "npx vite --port=4201",
+          path.join(__dirname, "react-analytics/react-analytics"),
+          "React Analytics",
+          4201
         );
       }, 3000);
 
@@ -237,7 +275,7 @@ async function main() {
 
       const killCmd = isWindows
         ? 'taskkill /F /IM node.exe /IM python.exe 2>nul || echo "No processes found"'
-        : 'pkill -f "ng serve" || pkill -f "nx serve" || pkill -f "manage.py runserver" || echo "No processes found"';
+        : 'pkill -f "vite" || pkill -f "manage.py runserver" || echo "No processes found"';
 
       exec(killCmd, (error, stdout, stderr) => {
         log("✅ All services stopped", "green");
@@ -253,7 +291,7 @@ async function main() {
       log("\n📖 Usage:", "bright");
       log(
         "  node start-services.js start   - Start all development services",
-        "cyan",
+        "cyan"
       );
       log("  node start-services.js stop    - Stop all services", "cyan");
       log("  node start-services.js build   - Build all applications", "cyan");

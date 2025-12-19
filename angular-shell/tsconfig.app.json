@@ -1,12 +1,54 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
-    "types": []
+    "target": "ES2022",
+    "lib": ["ES2022", "dom"],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "baseUrl": "./",
+    "paths": {
+      "@angular/core": ["../../node_modules/@angular/core"],
+      "@angular/common": ["../../node_modules/@angular/common"],
+      "@angular/common/http": ["../../node_modules/@angular/common/http"],
+      "@angular/router": ["../../node_modules/@angular/router"],
+      "@angular/forms": ["../../node_modules/@angular/forms"],
+      "@angular/platform-browser": [
+        "../../node_modules/@angular/platform-browser"
+      ],
+      "@angular/platform-browser-dynamic": [
+        "../../node_modules/@angular/platform-browser-dynamic"
+      ],
+      "@angular/animations": ["../../node_modules/@angular/animations"],
+      "@angular/router/testing": ["../../node_modules/@angular/router/testing"],
+      "@angular/common/testing": ["../../node_modules/@angular/common/testing"],
+      "@angular/core/testing": ["../../node_modules/@angular/core/testing"],
+      "@angular/platform-browser/testing": [
+        "../../node_modules/@angular/platform-browser/testing"
+      ],
+      "@angular/compiler": ["../../node_modules/@angular/compiler"],
+      "@angular/compiler/testing": [
+        "../../node_modules/@angular/compiler/testing"
+      ],
+      "@angular/animations/browser": [
+        "../../node_modules/@angular/animations/browser"
+      ],
+      "@angular/animations/browser/testing": [
+        "../../node_modules/@angular/animations/browser/testing"
+      ],
+      "@angular/platform-browser/animations": [
+        "../../node_modules/@angular/platform-browser/animations"
+      ],
+      "rxjs": ["../../node_modules/rxjs"],
+      "zone.js": ["../../node_modules/zone.js"],
+      "tslib": ["../../node_modules/tslib"],
+      "@enterprise-dashboard/core": ["../src/lib/core"],
+      "@enterprise-dashboard/shared": ["../src/lib/shared"]
+    }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts"
-  ],
-  "exclude": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts"]
+  "files": [],
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
 }

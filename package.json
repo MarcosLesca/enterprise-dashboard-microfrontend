@@ -29,7 +29,7 @@
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
-    "@angular-architects/module-federation": "^20.0.0",
+    "@angular-architects/module-federation": "^17.0.8",
     "@angular-devkit/build-angular": "~17.1.0",
     "@angular-devkit/core": "~17.1.0",
     "@angular-devkit/schematics": "~17.1.0",
@@ -79,6 +79,7 @@
     "jest-preset-angular": "~13.1.4",
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "^2.1.0",
+    "ng-packagr": "^17.3.0",
     "prettier": "^2.6.2",
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.1",

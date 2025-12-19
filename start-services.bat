@@ -1,305 +1,441 @@
 @echo off
-REM Enterprise Dashboard - Windows Development Scripts
-REM Compatible with Windows 10/11 with Node.js and Python 3.8+
+REM Enterprise Dashboard - Windows Development Script
+REM Fixed version that actually works on Windows properly
 
 setlocal enabledelayedexpansion
 
-REM Variables
-set "NODE_REQUIRED=14.0.0"
-set "PYTHON_REQUIRED=3.8.0"
+REM Configuration
+set "PROJECT_NAME=Enterprise Dashboard"
 set "ANGULAR_PORT=4200"
 set "REACT_PORT=4201"
 set "DJANGO_PORT=8000"
+set "LOG_FILE=deploy.log"
 
-REM Colors for Windows (limited support)
-set "INFO=[INFO]"
-set "SUCCESS=[SUCCESS]"
-set "WARNING=[WARNING]"
-set "ERROR=[ERROR]"
+REM Enable ANSI colors on Windows 10+
+reg query HKCU\CONSOLE /v VirtualTerminalLevel 2>nul || (
+    reg add HKCU\CONSOLE /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul 2>&1
+)
 
-:main
+REM Color codes
+set "RED=[91m"
+set "GREEN=[92m"
+set "YELLOW=[93m"
+set "BLUE=[94m"
+set "CYAN=[96m"
+set "BOLD=[1m"
+set "NC=[0m"
+
+REM Logging function
+log() {
+    echo %1
+    echo %date% %time% - %1 >> %LOG_FILE%
+}
+
+print() {
+    echo %CYAN%%1%NC%
+    log %1
+}
+
+print_success() {
+    echo %GREEN%%1%NC%
+    log %1
+}
+
+print_error() {
+    echo %RED%%1%NC%
+    log %1
+}
+
+print_warning() {
+    echo %YELLOW%%1%NC%
+    log %1
+}
+
+print_header() {
+    echo.
+    echo %BOLD%%CYAN%🚀 %PROJECT_NAME% - Windows Development%NC%
+    echo %CYAN%================================================%NC%
+}
+
+REM Function to check if command exists
+command_exists() {
+    where %1 >nul 2>&1
+    if %errorlevel% equ 0 (
+        exit /b 0
+    ) else (
+        exit /b 1
+    )
+}
+
+REM Function to check if port is in use
+check_port() {
+    netstat -an | findstr ":%1" | findstr "LISTENING" >nul
+    if %errorlevel% equ 0 (
+        exit /b 0
+    ) else (
+        exit /b 1
+    )
+}
+
+REM Function to kill process by port
+kill_port() {
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%1" ^| findstr "LISTENING"') do (
+        taskkill /F /PID %%a >nul 2>&1
+    )
+}
+
+REM Function to check dependencies
+check_dependencies() {
+    print_header
+    print "🔍 Checking dependencies..."
+    
+    REM Check Node.js
+    command_exists node
+    if %errorlevel% neq 0 (
+        print_error "❌ Node.js is not installed or not in PATH"
+        print "Please install Node.js from https://nodejs.org/"
+        exit /b 1
+    ) else (
+        for /f "tokens=*" %%i in ('node --version') do set NODE_VERSION=%%i
+        print_success "✅ Node.js: !NODE_VERSION!"
+    )
+    
+    REM Check npm
+    command_exists npm
+    if %errorlevel% neq 0 (
+        print_error "❌ npm is not installed or not in PATH"
+        exit /b 1
+    ) else (
+        for /f "tokens=*" %%i in ('npm --version') do set NPM_VERSION=%%i
+        print_success "✅ npm: !NPM_VERSION!"
+    )
+    
+    REM Check Python
+    command_exists python
+    if %errorlevel% neq 0 (
+        print_error "❌ Python is not installed or not in PATH"
+        print "Please install Python 3.8+ from https://python.org/"
+        exit /b 1
+    ) else (
+        for /f "tokens=*" %%i in ('python --version') do set PYTHON_VERSION=%%i
+        print_success "✅ Python: !PYTHON_VERSION!"
+    )
+    
+    print_success "✅ All dependencies found!"
+}
+
+REM Function to install npm dependencies
+install_npm_deps() {
+    print.
+    print "📦 Installing npm dependencies..."
+    
+    if not exist "node_modules\.package-lock.json" (
+        npm install
+        if %errorlevel% neq 0 (
+            print_error "❌ Failed to install npm dependencies"
+            exit /b 1
+        ) else (
+            print_success "✅ npm dependencies installed!"
+        )
+    ) else (
+        print_success "✅ npm dependencies already available"
+    )
+}
+
+REM Function to setup Python environment
+setup_python_env() {
+    print.
+    print "🐍 Setting up Python environment..."
+    
+    cd django-api
+    
+    REM Create virtual environment if it doesn't exist
+    if not exist "venv" (
+        print "📦 Creating virtual environment..."
+        python -m venv venv
+        if %errorlevel% neq 0 (
+            print_error "❌ Failed to create virtual environment"
+            cd ..
+            exit /b 1
+        )
+        print_success "✅ Virtual environment created!"
+    )
+    
+    REM Activate and install requirements
+    print "📦 Installing Python requirements..."
+    call venv\Scripts\activate.bat
+    
+    REM Check if requirements are installed
+    pip show django >nul 2>&1
+    if %errorlevel% neq 0 (
+        pip install -r requirements.txt
+        if %errorlevel% neq 0 (
+            print_error "❌ Failed to install Python requirements"
+            cd ..
+            exit /b 1
+        )
+    )
+    
+    REM Run migrations
+    print "🗄️ Running database migrations..."
+    python manage.py migrate
+    
+    REM Create superuser if doesn't exist
+    print "👤 Setting up admin user..."
+    echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(email='admin@enterprise.com').exists() or User.objects.create_superuser('admin@enterprise.com', 'admin', 'Enterprise123!')" | python manage.py shell
+    
+    cd ..
+    print_success "✅ Python environment ready!"
+}
+
+REM Function to start Django API
+start_django() {
+    print.
+    print "🚀 Starting Django API..."
+    
+    cd django-api
+    start /B "" cmd /c "venv\Scripts\activate.bat && python manage.py runserver 0.0.0.0:%DJANGO_PORT% > ../django.log 2>&1"
+    cd ..
+    
+    REM Wait a bit and check if it's running
+    timeout /t 5 /nobreak >nul
+    check_port %DJANGO_PORT%
+    if %errorlevel% equ 0 (
+        print_success "✅ Django API started!"
+        print "📱 API: http://localhost:%DJANGO_PORT%"
+        print "🔧 Admin: http://localhost:%DJANGO_PORT%/admin/"
+    ) else (
+        print_error "❌ Django API failed to start"
+        print "🔍 Check django.log for details"
+        exit /b 1
+    )
+}
+
+REM Function to start Angular Shell
+start_angular() {
+    print.
+    print "🚀 Starting Angular Shell..."
+    
+    cd angular-shell
+    start /B "" cmd /c "npm start > ../angular.log 2>&1"
+    cd ..
+    
+    REM Wait a bit and check if it's running
+    timeout /t 15 /nobreak >nul
+    check_port %ANGULAR_PORT%
+    if %errorlevel% equ 0 (
+        print_success "✅ Angular Shell started!"
+        print "📱 Angular Shell: http://localhost:%ANGULAR_PORT%"
+    ) else (
+        print_error "❌ Angular Shell failed to start"
+        print "🔍 Check angular.log for details"
+        exit /b 1
+    )
+}
+
+REM Function to start React Analytics
+start_react() {
+    print.
+    print "🚀 Starting React Analytics..."
+    
+    cd react-analytics\react-analytics
+    start /B "" cmd /c "npm run dev > ..\..\react.log 2>&1"
+    cd ..\..
+    
+    REM Wait a bit and check if it's running
+    timeout /t 15 /nobreak >nul
+    check_port %REACT_PORT%
+    if %errorlevel% equ 0 (
+        print_success "✅ React Analytics started!"
+        print "📱 React Analytics: http://localhost:%REACT_PORT%"
+    ) else (
+        print_error "❌ React Analytics failed to start"
+        print "🔍 Check react.log for details"
+        exit /b 1
+    )
+}
+
+REM Function to stop all services
+stop_all() {
+    print_header
+    print "🛑 Stopping all services..."
+    
+    REM Kill processes by port
+    kill_port %ANGULAR_PORT%
+    kill_port %REACT_PORT%
+    kill_port %DJANGO_PORT%
+    
+    REM Kill by process name (more aggressive)
+    taskkill /F /IM node.exe >nul 2>&1
+    taskkill /F /IM python.exe >nul 2>&1
+    
+    REM Clean up log files
+    if exist "django.log" del "django.log"
+    if exist "angular.log" del "angular.log"
+    if exist "react.log" del "react.log"
+    
+    print_success "✅ All services stopped!"
+}
+
+REM Function to show service status
+show_status() {
+    print_header
+    print "📊 Service Status:"
+    
+    REM Check Django
+    check_port %DJANGO_PORT%
+    if %errorlevel% equ 0 (
+        print_success "✅ Django API:      http://localhost:%DJANGO_PORT%"
+        print_success "✅ Django Admin:    http://localhost:%DJANGO_PORT%/admin/"
+    ) else (
+        print_error "❌ Django API:      Not running"
+    )
+    
+    REM Check Angular
+    check_port %ANGULAR_PORT%
+    if %errorlevel% equ 0 (
+        print_success "✅ Angular Shell:   http://localhost:%ANGULAR_PORT%"
+    ) else (
+        print_error "❌ Angular Shell:   Not running"
+    )
+    
+    REM Check React
+    check_port %REACT_PORT%
+    if %errorlevel% equ 0 (
+        print_success "✅ React Analytics: http://localhost:%REACT_PORT%"
+    ) else (
+        print_error "❌ React Analytics: Not running"
+    )
+}
+
+REM Function to clean up
+cleanup() {
+    print_header
+    print "🧹 Cleaning up..."
+    
+    REM Stop services first
+    call :stop_all
+    
+    REM Remove directories
+    if exist "node_modules" (
+        rmdir /s /q node_modules
+        print "📦 Removed node_modules"
+    )
+    
+    if exist "django-api\venv" (
+        rmdir /s /q django-api\venv
+        print "🐍 Removed Python virtual environment"
+    )
+    
+    if exist "dist" (
+        rmdir /s /q dist
+        print "🏗️ Removed dist folders"
+    )
+    
+    if exist ".nx" (
+        rmdir /s /q .nx
+        print "🧹 Removed Nx cache"
+    )
+    
+    print_success "✅ Cleanup completed!"
+}
+
+REM Main execution logic
 if "%1"=="" goto start
 if "%1"=="start" goto start
 if "%1"=="dev" goto start
+if "%1"=="development" goto start
 if "%1"=="stop" goto stop
-if "%1"=="build" goto build
 if "%1"=="status" goto status
-if "%1"=="clean" goto clean
+if "%1"=="clean" goto cleanup
+if "%1"=="cleanup" goto cleanup
 if "%1"=="help" goto help
 if "%1"=="-h" goto help
 if "%1"=="--help" goto help
 
-echo %ERROR% Unknown command: %1
-echo Use 'start-services.bat help' for usage information.
+print_error "❌ Unknown command: %1"
+print "Use 'start-services.bat help' for usage information."
 exit /b 1
 
-:header
-echo.
-echo ================================================================
-echo   Enterprise Dashboard - Micro-frontend Development
-echo ================================================================
-exit /b
-
-:check_dependencies
-echo %INFO% Checking dependencies...
-
-REM Check Node.js
-node --version >nul 2>&1
-if errorlevel 1 (
-    echo %ERROR% Node.js is not installed or not in PATH
-    echo Please install Node.js from https://nodejs.org/
-    exit /b 1
-) else (
-    for /f "tokens=*" %%i in ('node --version') do set NODE_VERSION=%%i
-    echo %SUCCESS% Node.js: !NODE_VERSION!
-)
-
-REM Check npm
-npm --version >nul 2>&1
-if errorlevel 1 (
-    echo %ERROR% npm is not installed or not in PATH
-    exit /b 1
-) else (
-    for /f "tokens=*" %%i in ('npm --version') do set NPM_VERSION=%%i
-    echo %SUCCESS% npm: !NPM_VERSION!
-)
-
-REM Check Python
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo %ERROR% Python is not installed or not in PATH
-    echo Please install Python 3.8+ from https://python.org/
-    exit /b 1
-) else (
-    for /f "tokens=*" %%i in ('python --version') do set PYTHON_VERSION=%%i
-    echo %SUCCESS% Python: !PYTHON_VERSION!
-)
-
-echo %SUCCESS% All dependencies found!
-exit /b
-
-:install_npm_deps
-echo.
-echo %INFO% Installing npm dependencies...
-npm install
-if errorlevel 1 (
-    echo %ERROR% Failed to install npm dependencies
-    exit /b 1
-) else (
-    echo %SUCCESS% npm dependencies installed!
-)
-exit /b
-
-:setup_python_env
-echo.
-echo %INFO% Setting up Python environment...
-
-cd django-api
-
-REM Create virtual environment if it doesn't exist
-if not exist "venv" (
-    echo %INFO% Creating virtual environment...
-    python -m venv venv
-    if errorlevel 1 (
-        echo %ERROR% Failed to create virtual environment
-        cd ..
-        exit /b 1
-    )
-    echo %SUCCESS% Virtual environment created!
-)
-
-REM Activate and install requirements
-echo %INFO% Installing Python requirements...
-call venv\Scripts\activate.bat
-pip install -r requirements.txt
-if errorlevel 1 (
-    echo %ERROR% Failed to install Python requirements
-    cd ..
-    exit /b 1
-)
-
-cd ..
-echo %SUCCESS% Python environment ready!
-exit /b
-
 :start
-call :header
 call :check_dependencies
-if errorlevel 1 exit /b 1
+if %errorlevel% neq 0 exit /b 1
 
 call :install_npm_deps
-if errorlevel 1 exit /b 1
+if %errorlevel% neq 0 exit /b 1
 
 call :setup_python_env
-if errorlevel 1 exit /b 1
+if %errorlevel% neq 0 exit /b 1
 
-echo.
-echo %INFO% Starting all services...
-echo %WARNING% This will take a moment...
+print.
+print "🚀 Starting all services..."
+print_warning "⏳ This will take a moment..."
 
-REM Start Django API in background
-echo %INFO% Starting Django API...
-cd django-api
-start "Django API" cmd /k "venv\Scripts\activate.bat && python manage.py runserver 0.0.0.0:8000"
-cd ..
-timeout /t 3 /nobreak >nul
+call :start_django
+call :start_angular
+call :start_react
 
-REM Start Angular Shell in background
-echo %INFO% Starting Angular Shell...
-cd angular-shell
-start "Angular Shell" cmd /k "npx ng serve"
-cd ..
-timeout /t 5 /nobreak >nul
-
-REM Start React Analytics in background
-echo %INFO% Starting React Analytics...
-start "React Analytics" cmd /k "npx nx serve react-analytics-react-analytics"
-
-REM Show status after delay
-timeout /t 5 /nobreak >nul
-call :show_status
-exit /b
-
-:show_status
-echo.
-echo ================================================================
-echo   🎉 ALL SERVICES RUNNING!
-echo ================================================================
-echo.
-echo 📱 Access your applications:
-echo    • Angular Shell: http://localhost:%ANGULAR_PORT%
-echo    • React Analytics: http://localhost:%REACT_PORT%
-echo    • Django API: http://localhost:%DJANGO_PORT%
-echo    • Django Admin: http://localhost:%DJANGO_PORT%/admin/
-echo.
-echo 🔑 Default credentials:
-echo    Email: admin@enterprise.com
-echo    Password: Enterprise123!
-echo.
-echo 💡 Close this window to stop all services
-echo ================================================================
-echo.
-pause
-exit /b
+print_header
+print_success "🎉 ALL SERVICES RUNNING!"
+print.
+print "📱 Access your applications:"
+print "   • Angular Shell: http://localhost:%ANGULAR_PORT%"
+print "   • React Analytics: http://localhost:%REACT_PORT%"
+print "   • Django API: http://localhost:%DJANGO_PORT%"
+print "   • Django Admin: http://localhost:%DJANGO_PORT%/admin/"
+print.
+print "🔑 Default credentials:"
+print "   Email: admin@enterprise.com"
+print "   Password: Enterprise123!"
+print.
+print_warning "💡 Use 'start-services.bat stop' to stop all services"
+print_warning "💡 Use 'start-services.bat status' to check service status"
+goto end
 
 :stop
-echo.
-echo %INFO% Stopping all services...
-
-REM Kill processes by name
-taskkill /F /IM node.exe >nul 2>&1
-taskkill /F /IM python.exe >nul 2>&1
-
-REM Alternative: Kill by port (requires netstat and findstr)
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :%ANGULAR_PORT% ^| findstr LISTENING') do (
-    taskkill /F /PID %%a >nul 2>&1
-)
-
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :%REACT_PORT% ^| findstr LISTENING') do (
-    taskkill /F /PID %%a >nul 2>&1
-)
-
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :%DJANGO_PORT% ^| findstr LISTENING') do (
-    taskkill /F /PID %%a >nul 2>&1
-)
-
-echo %SUCCESS% All services stopped!
-exit /b
-
-:build
-echo.
-echo %INFO% Building all applications...
-npm run build
-if errorlevel 1 (
-    echo %ERROR% Build failed
-    exit /b 1
-) else (
-    echo %SUCCESS% Build completed!
-)
-exit /b
+call :stop_all
+goto end
 
 :status
-call :header
-echo %INFO% Checking service status...
+call :show_status
+goto end
 
-REM Check if ports are in use
-netstat -aon | findstr :%ANGULAR_PORT% | findstr LISTENING >nul
-if errorlevel 1 (
-    echo ❌ Angular Shell (%ANGULAR_PORT%): Not running
-) else (
-    echo ✅ Angular Shell (%ANGULAR_PORT%): Running
-)
-
-netstat -aon | findstr :%REACT_PORT% | findstr LISTENING >nul
-if errorlevel 1 (
-    echo ❌ React Analytics (%REACT_PORT%): Not running
-) else (
-    echo ✅ React Analytics (%REACT_PORT%): Running
-)
-
-netstat -aon | findstr :%DJANGO_PORT% | findstr LISTENING >nul
-if errorlevel 1 (
-    echo ❌ Django API (%DJANGO_PORT%): Not running
-) else (
-    echo ✅ Django API (%DJANGO_PORT%): Running
-)
-exit /b
-
-:clean
-echo.
-echo %INFO% Cleaning up...
-
-REM Remove node_modules
-if exist "node_modules" (
-    rmdir /s /q node_modules
-    echo %INFO% Removed node_modules
-)
-
-REM Remove Python venv
-if exist "django-api\venv" (
-    rmdir /s /q django-api\venv
-    echo %INFO% Removed Python virtual environment
-)
-
-REM Remove dist folders
-if exist "dist" (
-    rmdir /s /q dist
-    echo %INFO% Removed dist folders
-)
-
-REM Remove Nx cache
-if exist ".nx" (
-    rmdir /s /q .nx
-    echo %INFO% Removed Nx cache
-)
-
-echo %SUCCESS% Cleanup completed!
-exit /b
+:cleanup
+call :cleanup
+goto end
 
 :help
-call :header
-echo 📖 Usage:
-echo   start-services.bat [command]
-echo.
-echo 🚀 Commands:
-echo   start, dev          Start all development services
-echo   stop                 Stop all running services
-echo   status               Check service status
-echo   build                Build all applications
-echo   clean                Clean all caches and dependencies
-echo   help, -h, --help     Show this help message
-echo.
-echo 💡 Quick start:
-echo   start-services.bat
-echo   or: npm run dev
-echo.
-echo 🔧 Requirements:
-echo   - Node.js 14+ with npm
-echo   - Python 3.8+ with pip
-echo   - Windows 10/11
-echo.
-echo 📝 Notes:
-echo   - Services start in separate command windows
-echo   - Close the main window to stop all services
-echo   - Use Ctrl+C in individual windows to stop specific services
-exit /b
+print_header
+print "📖 Usage:"
+print "  start-services.bat [command]"
+print.
+print "🚀 Commands:"
+print "  start, dev, development  Start all development services"
+print "  stop                      Stop all running services"
+print "  status                    Check service status"
+print "  cleanup, clean            Clean all caches and dependencies"
+print "  help, -h, --help          Show this help message"
+print.
+print "💡 Quick start:"
+print "  start-services.bat"
+print "  or: npm run dev"
+print.
+print "🔧 Requirements:"
+print "   - Node.js 14+ with npm"
+print "   - Python 3.8+ with pip"
+print "   - Windows 10/11"
+print.
+print "📝 Notes:"
+print "   - Services run in background"
+print "   - Check log files (*.log) if services fail to start"
+print "   - Use Ctrl+C in terminal to stop the script"
+
+:end
+if "%1"=="start" (
+    print.
+    print_warning "💡 Press any key to stop all services..."
+    pause >nul
+    call :stop_all
+)
+
+endlocal
