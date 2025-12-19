@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from "@angular/core";
 import { interval } from "rxjs";
 import { CommonModule, DatePipe } from "@angular/common";
-import { Router } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
 import { ApiService, Dashboard, Widget } from "../services/api.service";
 
