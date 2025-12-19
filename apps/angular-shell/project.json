@@ -1,0 +1,85 @@
+{
+  "name": "angular-shell",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/angular-shell/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@angular-devkit/build-angular:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/angular-shell",
+        "index": "apps/angular-shell/src/index.html",
+        "browser": "apps/angular-shell/src/main.ts",
+        "polyfills": ["zone.js"],
+        "tsConfig": "apps/angular-shell/tsconfig.app.json",
+        "assets": [
+          "apps/angular-shell/src/favicon.ico",
+          "apps/angular-shell/src/assets"
+        ],
+        "styles": ["apps/angular-shell/src/styles.css", "apps/angular-shell/src/remotes.css"],
+        "scripts": ["node dist/apps/angular-shell/server.js"]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@angular-devkit/build-angular:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "angular-shell:build:production"
+        },
+        "development": {
+          "buildTarget": "angular-shell:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "buildTarget": "angular-shell:build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/angular-shell/jest.config.ts"
+      }
+    },
+    "serve-static": {
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "angular-shell:build",
+        "staticFilePath": "dist/apps/angular-shell/browser"
+      }
+    }
+  }
+}

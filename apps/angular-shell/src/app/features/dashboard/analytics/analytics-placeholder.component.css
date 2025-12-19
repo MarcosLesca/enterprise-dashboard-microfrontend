@@ -1,0 +1,79 @@
+.analytics-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 1rem;
+  color: white;
+  text-align: center;
+}
+
+.placeholder-content {
+  padding: 2rem;
+}
+
+.placeholder-content h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.placeholder-content p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.tech-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.badge {
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.badge.angular {
+  background-color: #dd0031;
+  color: white;
+}
+
+.badge.react {
+  background-color: #61dafb;
+  color: #282c34;
+}
+
+.badge.arrow {
+  font-size: 1.5rem;
+}
+
+.migration-steps {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  text-align: left;
+  max-width: 500px;
+}
+
+.migration-steps h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.migration-steps ol {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.migration-steps li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}

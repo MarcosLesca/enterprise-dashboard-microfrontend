@@ -1,0 +1,73 @@
+{
+  "name": "react-analytics-react-analytics",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/react-analytics/react-analytics/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/react-analytics/react-analytics"
+      },
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "react-analytics-react-analytics:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "react-analytics-react-analytics:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "react-analytics-react-analytics:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "react-analytics-react-analytics:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "react-analytics-react-analytics:build:development"
+        },
+        "production": {
+          "buildTarget": "react-analytics-react-analytics:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/apps/react-analytics/react-analytics"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "serve-static": {
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "react-analytics-react-analytics:build"
+      }
+    }
+  }
+}

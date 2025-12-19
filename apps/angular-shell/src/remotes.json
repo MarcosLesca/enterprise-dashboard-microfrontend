@@ -1,0 +1,8 @@
+{
+  "reactAnalytics": {
+    "expose": [
+      "./SimpleAnalytics"
+    ],
+    "remoteEntry": "http://localhost:4201/remoteEntry.js"
+  }
+}

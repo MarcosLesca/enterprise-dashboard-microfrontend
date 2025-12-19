@@ -1,0 +1,13 @@
+/* Module Federation Styles for Remote Components */
+react-analytics-remote-container {
+  display: block;
+  width: 100%;
+  height: 100vh;
+  overflow: auto;
+}
+
+.react-analytics-remote-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}

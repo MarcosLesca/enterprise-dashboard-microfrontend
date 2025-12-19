@@ -1,0 +1,67 @@
+.simple-chart {
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chart-bar {
+  width: 40px;
+  height: 120px;
+  background: linear-gradient(to top, #3b82f6, #60a5fa);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-bar-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #1e40af;
+  border-radius: 0 0 4px 4px;
+  transition: height 0.3s ease;
+}
+
+.chart-bar-label {
+  position: absolute;
+  bottom: -20px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.chart-day {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.simple-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.875rem;
+}
+
+.data-table th {
+  font-weight: 600;
+  color: #111827;
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}

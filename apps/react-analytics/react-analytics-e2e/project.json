@@ -1,0 +1,29 @@
+{
+  "name": "react-analytics-react-analytics-e2e",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/react-analytics/react-analytics-e2e/src",
+  "tags": [],
+  "implicitDependencies": ["react-analytics-react-analytics"],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "apps/react-analytics/react-analytics-e2e/cypress.config.ts",
+        "testingType": "e2e",
+        "devServerTarget": "react-analytics-react-analytics:serve"
+      },
+      "configurations": {
+        "production": {
+          "devServerTarget": "react-analytics-react-analytics:serve:production"
+        },
+        "ci": {
+          "devServerTarget": "react-analytics-react-analytics:serve-static"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}
