@@ -91,7 +91,7 @@ setup_django_full() {
     
     # Create superuser if needed
     print "👤 Setting up admin user..." $BLUE
-    echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin@enterprise.com', 'admin', 'Enterprise123!')" | python manage.py shell
+    echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(email='admin@enterprise.com').exists() or User.objects.create_superuser('admin@enterprise.com', 'admin', 'Enterprise123!')" | python manage.py shell
     
     cd ..
     print "✅ Django setup completed!" $GREEN
