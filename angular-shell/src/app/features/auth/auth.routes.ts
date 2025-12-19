@@ -1,24 +1,21 @@
-import { Routes } from '@angular/router';
-import { LoginComponent } from './login/login.component';
-import { RegisterComponent } from './register/register.component';
-import { PublicGuard } from '@enterprise-dashboard/core';
+import { Routes } from "@angular/router";
+import { LoginComponent } from "./login/login.component";
+import { RegisterComponent } from "./register/register.component";
 
 export const AUTH_ROUTES: Routes = [
   {
-    path: 'login',
+    path: "login",
     component: LoginComponent,
-    canActivate: [PublicGuard],
-    title: 'Login - Enterprise Dashboard'
+    title: "Login - Enterprise Dashboard",
   },
   {
-    path: 'register',
+    path: "register",
     component: RegisterComponent,
-    canActivate: [PublicGuard],
-    title: 'Register - Enterprise Dashboard'
+    title: "Register - Enterprise Dashboard",
   },
   {
-    path: '',
-    redirectTo: 'login',
-    pathMatch: 'full'
-  }
+    path: "",
+    redirectTo: "login",
+    pathMatch: "full",
+  },
 ];

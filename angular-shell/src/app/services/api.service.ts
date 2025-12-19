@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Injectable } from "@angular/core";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { Observable, BehaviorSubject } from "rxjs";
+import { map } from "rxjs/operators";
 
 export interface User {
   id: number;
@@ -36,7 +36,7 @@ export interface Dashboard {
 export interface Widget {
   id: number;
   name: string;
-  widget_type: 'chart' | 'metric' | 'table' | 'text';
+  widget_type: "chart" | "metric" | "table" | "text";
   dashboard: number;
   config: any;
   position_x: number;
@@ -49,16 +49,16 @@ export interface Widget {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class ApiService {
-  private baseUrl = 'http://localhost:8000/api';
-  private authUrl = 'http://localhost:8000/api/auth';
+  private baseUrl = "http://localhost:8000/api";
+  private authUrl = "http://localhost:8000/api/auth";
   private tokenSubject = new BehaviorSubject<string | null>(null);
   public token$ = this.tokenSubject.asObservable();
 
   constructor(private http: HttpClient) {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem("access_token");
     if (token) {
       this.tokenSubject.next(token);
     }
@@ -67,21 +67,23 @@ export class ApiService {
   private getAuthHeaders(): HttpHeaders {
     const token = this.tokenSubject.value;
     return new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
     });
   }
 
   // Authentication
   login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/token/`, credentials).pipe(
-      map(response => {
-        localStorage.setItem('access_token', response.access);
-        localStorage.setItem('refresh_token', response.refresh);
-        this.tokenSubject.next(response.access);
-        return response;
-      })
-    );
+    return this.http
+      .post<AuthResponse>(`${this.baseUrl}/token/`, credentials)
+      .pipe(
+        map((response) => {
+          localStorage.setItem("access_token", response.access);
+          localStorage.setItem("refresh_token", response.refresh);
+          this.tokenSubject.next(response.access);
+          return response;
+        }),
+      );
   }
 
   register(userData: any): Observable<any> {
@@ -89,8 +91,8 @@ export class ApiService {
   }
 
   logout(): void {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
     this.tokenSubject.next(null);
   }
 
@@ -101,81 +103,91 @@ export class ApiService {
   // Profile
   getProfile(): Observable<User> {
     return this.http.get<User>(`${this.authUrl}/profile/`, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
   updateProfile(userData: Partial<User>): Observable<User> {
     return this.http.put<User>(`${this.authUrl}/profile/`, userData, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
   // Dashboards
   getDashboards(): Observable<Dashboard[]> {
     return this.http.get<Dashboard[]>(`${this.baseUrl}/dashboards/`, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
   getDashboard(id: number): Observable<Dashboard> {
     return this.http.get<Dashboard>(`${this.baseUrl}/dashboards/${id}/`, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
   createDashboard(dashboard: Partial<Dashboard>): Observable<Dashboard> {
     return this.http.post<Dashboard>(`${this.baseUrl}/dashboards/`, dashboard, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
-  updateDashboard(id: number, dashboard: Partial<Dashboard>): Observable<Dashboard> {
-    return this.http.put<Dashboard>(`${this.baseUrl}/dashboards/${id}/`, dashboard, {
-      headers: this.getAuthHeaders()
-    });
+  updateDashboard(
+    id: number,
+    dashboard: Partial<Dashboard>,
+  ): Observable<Dashboard> {
+    return this.http.put<Dashboard>(
+      `${this.baseUrl}/dashboards/${id}/`,
+      dashboard,
+      {
+        headers: this.getAuthHeaders(),
+      },
+    );
   }
 
   deleteDashboard(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/dashboards/${id}/`, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
   getDashboardWidgets(dashboardId: number): Observable<Widget[]> {
-    return this.http.get<Widget[]>(`${this.baseUrl}/dashboards/${dashboardId}/widgets/`, {
-      headers: this.getAuthHeaders()
-    });
+    return this.http.get<Widget[]>(
+      `${this.baseUrl}/dashboards/${dashboardId}/widgets/`,
+      {
+        headers: this.getAuthHeaders(),
+      },
+    );
   }
 
   // Widgets
   getWidgets(): Observable<Widget[]> {
     return this.http.get<Widget[]>(`${this.baseUrl}/widgets/`, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
   getWidget(id: number): Observable<Widget> {
     return this.http.get<Widget>(`${this.baseUrl}/widgets/${id}/`, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
   createWidget(widget: Partial<Widget>): Observable<Widget> {
     return this.http.post<Widget>(`${this.baseUrl}/widgets/`, widget, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
   updateWidget(id: number, widget: Partial<Widget>): Observable<Widget> {
     return this.http.put<Widget>(`${this.baseUrl}/widgets/${id}/`, widget, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 
   deleteWidget(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/widgets/${id}/`, {
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
   }
 }

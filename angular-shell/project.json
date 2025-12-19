@@ -5,6 +5,7 @@
   "prefix": "app",
   "sourceRoot": "angular-shell/src",
   "tags": [],
+  "implicitDependencies": [],
   "targets": {
     "build": {
       "executor": "@nx/angular:application",
@@ -12,11 +13,14 @@
       "options": {
         "outputPath": "dist/angular-shell",
         "index": "src/index.html",
-        "browser": "src/main.ts",
+        "browser": "angular-shell/src/main.ts",
         "polyfills": ["zone.js"],
         "tsConfig": "angular-shell/tsconfig.app.json",
         "assets": [],
-        "styles": ["src/styles.css", "src/remotes.css"],
+        "styles": [
+          "angular-shell/src/styles.css",
+          "angular-shell/src/remotes.css"
+        ],
         "scripts": []
       },
       "configurations": {

@@ -1,7 +1,8 @@
-import { Component, Input } from "@angular/core";
+import { Component, Input, Output, EventEmitter } from "@angular/core";
 
 @Component({
   selector: "enterprise-button",
+  standalone: true,
   template: `
     <button
       [class]="buttonClass"
@@ -64,6 +65,7 @@ export class ButtonComponent {
   @Input() type: "primary" | "secondary" | "danger" = "primary";
   @Input() disabled = false;
   @Input() size: "small" | "medium" | "large" = "medium";
+  @Output() onClick = new EventEmitter<Event>();
 
   get buttonClass(): string {
     const classes = [`btn-${this.type}`];
