@@ -57,14 +57,13 @@ export class NavbarComponent {
             Profile
           </a>
         </div>
-
-        <div user>
+        <div class="user">
           <span class="user-info">
             {{ currentUser?.name || "User" }}
           </span>
-                     <button class="btn btn-secondary btn-sm" (click)="logout()">
+          <button class="btn btn-secondary btn-sm" (click)="logout()">
             Logout
-          </app-button>
+          </button>
         </div>
       </app-navbar>
 

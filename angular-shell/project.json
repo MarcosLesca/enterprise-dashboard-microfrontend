@@ -12,7 +12,7 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/angular-shell",
-        "index": "src/index.html",
+        "index": "angular-shell/src/index.html",
         "browser": "angular-shell/src/main.ts",
         "polyfills": ["zone.js"],
         "tsConfig": "angular-shell/tsconfig.app.json",
