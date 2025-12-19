@@ -1,1 +1,0 @@
-# Core app for Django API
