@@ -42,7 +42,8 @@
         "development": {
           "optimization": false,
           "extractLicenses": false,
-          "sourceMap": true
+          "sourceMap": true,
+          "tsConfig": "angular-shell/tsconfig.dev.json"
         }
       },
       "defaultConfiguration": "production"

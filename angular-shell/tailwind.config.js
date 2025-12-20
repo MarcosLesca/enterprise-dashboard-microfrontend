@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+module.exports = {
+  content: ["./src/**/*.{html,ts,css,scss}"],
   darkMode: "class",
   theme: {
     extend: {
@@ -177,6 +177,8 @@ export default {
       animation: {
         spin: "spin 0.8s linear infinite",
         skeleton: "skeleton 1.5s ease-in-out infinite",
+        "fade-in": "fadeIn 0.3s ease-in-out",
+        "slide-up": "slideUp 0.3s ease-out",
       },
       keyframes: {
         spin: {
@@ -190,6 +192,20 @@ export default {
           },
           "100%": {
             backgroundPosition: "-200% 0",
+          },
+        },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        slideUp: {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(10px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
           },
         },
       },

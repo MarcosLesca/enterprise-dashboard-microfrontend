@@ -1,140 +1,315 @@
-.dashboard-home {
-  padding: 0;
+/* ==========================================================================
+   DASHBOARD HOME COMPONENT STYLES
+   ========================================================================== */
+
+/* Most styles are now handled by Tailwind utilities and global styles */
+/* This file contains only component-specific animations and enhancements */
+
+/* Card hover animations */
+.card {
+  position: relative;
+  overflow: hidden;
 }
 
-.dashboard-header {
-  margin-bottom: 2rem;
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transition: left 0.6s ease;
 }
 
-.dashboard-header h1 {
-  color: #111827;
-  font-size: 2.25rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+.card:hover::before {
+  left: 100%;
 }
 
-.dashboard-header p {
-  color: #6b7280;
-  font-size: 1.125rem;
-  margin: 0;
+/* Stat card animations */
+.stat-value {
+  animation: fadeInUp 0.5s ease-out;
 }
 
-.dashboard-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+.stat-change {
+  animation: fadeInUp 0.5s ease-out 0.1s both;
 }
 
-.stat-card {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon {
-  font-size: 2.5rem;
-  line-height: 1;
-}
-
-.stat-content h3 {
-  color: #111827;
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 0.25rem 0;
-}
-
-.stat-content p {
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin: 0;
-}
-
-.dashboard-actions {
-  margin-top: 2rem;
-}
-
-.dashboard-actions h2 {
-  color: #111827;
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-
-.action-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
+/* Quick action card animations */
 .action-card {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(59, 130, 246, 0.05) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.action-card:hover::after {
+  transform: translateX(100%);
+}
+
+/* Activity item animations */
+.activity-item {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Status badge animations */
+.status-badge {
+  position: relative;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-badge::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  animation: ripple 2s ease-in-out infinite;
+}
+
+.status-online::before {
+  background-color: var(--color-success-500);
+}
+
+.status-warning::before {
+  background-color: var(--color-warning-500);
+}
+
+.status-error::before {
+  background-color: var(--color-error-500);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    width: 0.5rem;
+    height: 0.5rem;
+    opacity: 0.8;
+  }
+  100% {
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0;
+  }
+}
+
+/* Progress bar animations */
+.progress-bar-fill {
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-600) 0%,
+    var(--color-primary-500) 50%,
+    var(--color-primary-600) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Loading state animations */
+.loading-enter {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.loading-exit {
+  animation: fadeOut 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Skeleton animations */
+.skeleton-container {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* Refresh button animation */
+.refresh-btn {
   position: relative;
 }
 
-.action-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.refresh-btn.spinning svg {
+  animation: spin 1s linear infinite;
 }
 
-.action-icon {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.action-card h3 {
-  color: #111827;
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
+/* Performance metrics animations */
+.metric-bar {
+  transition: width 1s ease-out;
 }
 
-.action-card p {
-  color: #6b7280;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  margin: 0;
+.metric-bar.watching {
+  animation: pulse 2s ease-in-out infinite;
 }
 
-.action-badge {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background-color: #3b82f6;
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 500;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+/* Dark mode specific adjustments */
+@media (prefers-color-scheme: dark) {
+  .card::before {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(59, 130, 246, 0.1),
+      transparent
+    );
+  }
+
+  .action-card::after {
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(59, 130, 246, 0.1) 50%,
+      transparent 70%
+    );
+  }
 }
 
-/* Responsive */
+.dark .card::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(59, 130, 246, 0.1),
+    transparent
+  );
+}
+
+.dark .action-card::after {
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(59, 130, 246, 0.1) 50%,
+    transparent 70%
+  );
+}
+
+/* Responsive animations */
 @media (max-width: 768px) {
-  .dashboard-stats {
-    grid-template-columns: 1fr;
+  .stat-value,
+  .stat-change {
+    animation-duration: 0.3s;
   }
-  
-  .action-grid {
-    grid-template-columns: 1fr;
+
+  .action-card::after {
+    animation-duration: 0.8s;
   }
-  
-  .dashboard-header h1 {
-    font-size: 1.875rem;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card {
+    border: 2px solid currentColor;
+  }
+
+  .card:hover::before,
+  .action-card::after {
+    display: none;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .card::before,
+  .action-card::after,
+  .stat-value,
+  .stat-change,
+  .activity-item,
+  .status-badge::before,
+  .progress-bar-fill,
+  .refresh-btn.spinning svg {
+    animation: none !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .card::before,
+  .action-card::after,
+  .status-badge::before {
+    display: none !important;
+  }
+
+  .progress-bar-fill {
+    background: var(--color-primary-600) !important;
   }
 }
