@@ -27,7 +27,7 @@ function demoCredentialsValidator(
     }
 
     // For real validation, we'd check actual email format
-    if (email && email.includes("@") && password && password.length >= 8) {
+    if (email && email?.includes("@") && password && password?.length >= 8) {
       return null;
     }
   }
@@ -81,7 +81,11 @@ function demoCredentialsValidator(
         >
           <!-- Alert for errors -->
           <div *ngIf="errorMessage" class="alert alert-error" role="alert">
-            <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
+            <svg
+              class="w-5 h-5 flex-shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
               <path
                 fill-rule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -116,7 +120,7 @@ function demoCredentialsValidator(
                 class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
               >
                 <svg
-                  class="h-4 w-4 text-gray-400"
+                  class="h-5 w-5 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -135,9 +139,9 @@ function demoCredentialsValidator(
                 type="text"
                 class="form-control pl-10"
                 [class.form-control-error]="
-                  email.invalid && (email.dirty || email.touched)
+                  email?.invalid && (email?.dirty || email?.touched)
                 "
-                placeholder="admin or your@email.com"
+                placeholder="admin or your@email?.com"
                 [disabled]="isLoading"
                 aria-describedby="email-hint email-error"
               />
@@ -154,9 +158,9 @@ function demoCredentialsValidator(
               class="mt-1 text-sm text-error-600"
               role="alert"
             >
-              <span *ngIf="email.hasError('required')">Email is required</span>
+              <span *ngIf="email?.hasError('required')">Email is required</span>
               <span
-                *ngIf="email.hasError('email') && !email.hasError('required')"
+                *ngIf="email?.hasError('email') && !email?.hasError('required')"
                 >Please enter a valid email</span
               >
             </div>
@@ -170,7 +174,7 @@ function demoCredentialsValidator(
                 class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
               >
                 <svg
-                  class="h-4 w-4 text-gray-400"
+                  class="h-5 w-5 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -189,7 +193,7 @@ function demoCredentialsValidator(
                 [type]="showPassword ? 'text' : 'password'"
                 class="form-control pl-10 pr-10"
                 [class.form-control-error]="
-                  password.invalid && (password.dirty || password.touched)
+                  password?.invalid && (password?.dirty || password?.touched)
                 "
                 placeholder="Enter your password"
                 [disabled]="isLoading"
@@ -204,7 +208,7 @@ function demoCredentialsValidator(
               >
                 <svg
                   *ngIf="!showPassword"
-                  class="h-4 w-4 text-gray-400 hover:text-gray-600"
+                  class="h-5 w-5 text-gray-400 hover:text-gray-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -224,7 +228,7 @@ function demoCredentialsValidator(
                 </svg>
                 <svg
                   *ngIf="showPassword"
-                  class="h-4 w-4 text-gray-400 hover:text-gray-600"
+                  class="h-5 w-5 text-gray-400 hover:text-gray-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -246,7 +250,7 @@ function demoCredentialsValidator(
               class="mt-1 text-sm text-error-600"
               role="alert"
             >
-              <span *ngIf="password.hasError('required')"
+              <span *ngIf="password?.hasError('required')"
                 >Password is required</span
               >
             </div>
