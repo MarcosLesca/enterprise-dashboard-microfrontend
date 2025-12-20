@@ -771,6 +771,24 @@
   pointer-events: auto;
 }
 
+/* Form Icon Sizes */
+.form-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.form-icon:hover {
+  color: var(--color-text-secondary);
+}
+
+.alert-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
 .form-control-suffix button {
   background: none;
   border: none;

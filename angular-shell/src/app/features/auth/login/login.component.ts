@@ -81,11 +81,7 @@ function demoCredentialsValidator(
         >
           <!-- Alert for errors -->
           <div *ngIf="errorMessage" class="alert alert-error" role="alert">
-            <svg
-              class="w-5 h-5 flex-shrink-0"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
+            <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fill-rule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -120,7 +116,7 @@ function demoCredentialsValidator(
                 class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
               >
                 <svg
-                  class="h-5 w-5 text-gray-400"
+                  class="h-4 w-4 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -174,7 +170,7 @@ function demoCredentialsValidator(
                 class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
               >
                 <svg
-                  class="h-5 w-5 text-gray-400"
+                  class="h-4 w-4 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -208,7 +204,7 @@ function demoCredentialsValidator(
               >
                 <svg
                   *ngIf="!showPassword"
-                  class="h-5 w-5 text-gray-400 hover:text-gray-600"
+                  class="h-4 w-4 text-gray-400 hover:text-gray-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -228,7 +224,7 @@ function demoCredentialsValidator(
                 </svg>
                 <svg
                   *ngIf="showPassword"
-                  class="h-5 w-5 text-gray-400 hover:text-gray-600"
+                  class="h-4 w-4 text-gray-400 hover:text-gray-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
