@@ -43,14 +43,14 @@ function demoCredentialsValidator(
     <div
       class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
     >
-      <div class="max-w-md w-full space-y-8">
+      <div class="max-w-md mx-auto space-y-8">
         <!-- Header -->
         <div class="text-center">
           <div
-            class="mx-auto h-16 w-16 bg-primary-500 rounded-full flex items-center justify-center"
+            class="mx-auto h-12 w-12 bg-primary-500 rounded-full flex items-center justify-center"
           >
             <svg
-              class="h-10 w-10 text-white"
+              class="h-6 w-6 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
