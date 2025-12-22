@@ -1,20 +1,23 @@
 /// <reference types='vitest' />
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { nxViteTsPaths } from "@nx/vite/plugins/nx-tsconfig-paths.plugin";
 
 export default defineConfig({
   root: __dirname,
-  cacheDir: '../../../node_modules/.vite/apps/react-analytics/react-analytics',
+  cacheDir: "../../../node_modules/.vite/apps/react-analytics/react-analytics",
 
   server: {
     port: 4201,
-    host: 'localhost',
+    host: "localhost",
+    fs: {
+      allow: [".."],
+    },
   },
 
   preview: {
     port: 4301,
-    host: 'localhost',
+    host: "localhost",
   },
 
   plugins: [react(), nxViteTsPaths()],
@@ -25,27 +28,26 @@ export default defineConfig({
   // },
 
   build: {
-    outDir: '../../../dist/apps/react-analytics/react-analytics',
+    outDir: "../../../dist/apps/react-analytics/react-analytics",
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
-
   },
 
   test: {
     globals: true,
     cache: {
-      dir: '../../../node_modules/.vitest',
+      dir: "../../../node_modules/.vitest",
     },
-    environment: 'jsdom',
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    environment: "jsdom",
+    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
 
-    reporters: ['default'],
+    reporters: ["default"],
     coverage: {
       reportsDirectory:
-        '../../../coverage/apps/react-analytics/react-analytics',
-      provider: 'v8',
+        "../../../coverage/apps/react-analytics/react-analytics",
+      provider: "v8",
     },
   },
 });

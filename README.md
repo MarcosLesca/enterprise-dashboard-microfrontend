@@ -1,4 +1,5 @@
 # 🎉 Enterprise Dashboard - Windows-Ready!
+
 > Complete micro-frontend system ready for Windows cloning and deployment
 
 ## 🏗️ Project Overview
@@ -8,13 +9,16 @@ A comprehensive enterprise dashboard demonstrating micro-frontend architecture u
 ## 🚀 Architecture
 
 ### Frontend Applications
+
 - **Angular Shell** (Port 4200): Host application managing routing and layout
 - **React Analytics** (Port 4201): Remote micro-frontend with dashboard widgets
 
-### Backend Services  
+### Backend Services
+
 - **Django REST API** (Port 8000): Authentication and data management
 
 ### Key Technologies
+
 - **Module Federation**: Cross-framework micro-frontend communication
 - **JWT Authentication**: Secure token-based auth across services
 - **Nx Monorepo**: Unified development and build system
@@ -25,7 +29,7 @@ A comprehensive enterprise dashboard demonstrating micro-frontend architecture u
 enterprise-dashboard-microfrontend/
 ├── apps/
 │   ├── angular-shell/          # Angular host application
-│   ├── react-analytics/        # React remote application  
+│   ├── react-analytics/        # React remote application
 │   └── django-api/            # Django REST API
 ├── tools/
 └── shared/                    # Shared utilities and types
@@ -34,30 +38,65 @@ enterprise-dashboard-microfrontend/
 ## 🛠️ Setup Instructions
 
 ### Prerequisites
-- Node.js 16+
+
+- Node.js 16+ (v25+ funciona con warnings)
 - Python 3.8+
 - Git
 
+### 🚀 Script Automático (Recomendado)
+
+```bash
+# Un solo comando para INICIAR TODO
+./dev.sh start
+
+# Otros comandos útiles
+./dev.sh status    # Verificar puertos
+./dev.sh logs      # Ver logs de todos los servicios
+./dev.sh restart   # Reiniciar todo
+./dev.sh clean     # Limpiar puertos bloqueados
+./dev.sh help      # Ayuda completa
+```
+
+**¿Qué hace automáticamente?**
+✅ Verifica e instala dependencias  
+✅ Configura entorno Python  
+✅ Maneja conflictos de puertos  
+✅ Inicia servicios en orden correcto  
+✅ Genera logs separados por servicio  
+✅ Maneja timeouts y errores
+
+### 🔑 Credenciales por Defecto
+
+```
+Email:    admin@enterprise.com
+Password: Enterprise123!
+```
+
 ### Quick Start
 
-1. **Start All Services:**
+1. **Start All Services (MODO AUTOMÁTICO):**
+
    ```bash
-   ./start_all_services.sh
+   ./dev.sh start
    ```
 
 2. **Access Applications:**
+
    - Angular Shell: http://localhost:4200
-   - React Analytics: http://localhost:4201  
+   - React Analytics: http://localhost:4201
    - Django Admin: http://localhost:8000/admin/
 
 3. **Stop All Services:**
    ```bash
-   ./stop_services.sh
+   ./dev.sh stop
    ```
+
+**🎯 RECOMENDACIÓN:** Usá siempre `./dev.sh start` - maneja todo automáticamente: dependencias, puertos, logs, configuración.
 
 ### Manual Setup
 
 #### Backend Setup
+
 ```bash
 cd apps/django-api
 python3 -m venv venv
@@ -68,13 +107,14 @@ pip install -r requirements.txt
 ```
 
 #### Frontend Setup
+
 ```bash
 # Angular Shell
 cd apps/angular-shell
 npm install
 npm start
 
-# React Analytics  
+# React Analytics
 cd apps/react-analytics
 npm install
 npm start
@@ -83,12 +123,14 @@ npm start
 ## 🔌 API Endpoints
 
 ### Authentication
+
 - `POST /api/token/` - Get JWT tokens
 - `POST /api/token/refresh/` - Refresh access token
 - `POST /api/auth/register/` - User registration
 - `GET/PUT /api/auth/profile/` - User profile
 
 ### Data Management
+
 - `GET/POST /api/dashboards/` - Dashboard CRUD
 - `GET/POST /api/widgets/` - Widget CRUD
 - `GET /api/dashboards/{id}/widgets/` - Dashboard widgets
@@ -96,6 +138,7 @@ npm start
 ## 🎯 Features Implemented
 
 ### ✅ Core Features
+
 - [x] Micro-frontend architecture with Module Federation
 - [x] JWT authentication across all services
 - [x] CORS configuration for cross-origin requests
@@ -106,12 +149,14 @@ npm start
 - [x] Interactive charts and widgets
 
 ### ✅ Authentication System
+
 - [x] User registration and login
 - [x] Token-based authentication
 - [x] Protected routes and API endpoints
 - [x] Admin user management
 
 ### ✅ Data Models
+
 - [x] Custom User model
 - [x] Dashboard management
 - [x] Widget system with JSON configuration
@@ -120,6 +165,7 @@ npm start
 ## 🔑 Default Credentials
 
 **Admin User:**
+
 - Email: `admin@enterprise.com`
 - Username: `admin`
 - Password: `Enterprise123!`
@@ -127,6 +173,7 @@ npm start
 ## 🧪 Testing
 
 ### API Testing
+
 ```bash
 # Get JWT token
 curl -X POST http://localhost:8000/api/token/ \
@@ -139,6 +186,7 @@ curl -X GET http://localhost:8000/api/dashboards/ \
 ```
 
 ### Frontend Integration Testing
+
 1. Navigate to Angular Shell
 2. Use credentials to login
 3. Access embedded React Analytics module
@@ -149,6 +197,7 @@ curl -X GET http://localhost:8000/api/dashboards/ \
 ### Quick Deployment Options
 
 #### 1. Docker Production (Recommended)
+
 ```bash
 # Clone and build
 git clone <repository>
@@ -162,6 +211,7 @@ docker-compose up -d
 ```
 
 #### 2. Manual Production Deployment
+
 ```bash
 # Backend Deployment
 cd apps/django-api
@@ -177,7 +227,7 @@ npm install --production
 npm run build
 # Serve dist/ folder with nginx or CDN
 
-cd apps/react-analytics  
+cd apps/react-analytics
 npm install --production
 npm run build
 # Serve dist/ folder with nginx or CDN
@@ -186,9 +236,11 @@ npm run build
 ### Production Configuration
 
 #### Environment Variables
+
 Create `.env` file in each app directory:
 
 **Backend (.env):**
+
 ```bash
 # Security
 SECRET_KEY=your-very-secure-secret-key-here
@@ -209,6 +261,7 @@ EMAIL_HOST_PASSWORD=your-app-password
 ```
 
 **Frontend (.env):**
+
 ```bash
 # API URLs
 API_BASE_URL=https://api.yourdomain.com/api
@@ -220,6 +273,7 @@ REACT_REMOTE_URL=https://analytics.yourdomain.com
 ```
 
 #### Database Setup (PostgreSQL)
+
 ```sql
 -- Create database and user
 CREATE DATABASE enterprise_dashboard;
@@ -228,30 +282,31 @@ GRANT ALL PRIVILEGES ON DATABASE enterprise_dashboard TO enterprise_user;
 ```
 
 #### Nginx Configuration
+
 ```nginx
 server {
     listen 80;
     server_name yourdomain.com;
-    
+
     # Frontend (Angular)
     location / {
         root /path/to/angular-shell/dist;
         try_files $uri $uri/ /index.html;
     }
-    
+
     # React Analytics
     location /analytics/ {
         alias /path/to/react-analytics/dist/;
         try_files $uri $uri/ /index.html;
     }
-    
+
     # Django API
     location /api/ {
         proxy_pass http://localhost:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
-    
+
     # Django Admin
     location /admin/ {
         proxy_pass http://localhost:8000;
@@ -264,10 +319,10 @@ server {
 server {
     listen 443 ssl;
     server_name yourdomain.com;
-    
+
     ssl_certificate /path/to/ssl/cert.pem;
     ssl_certificate_key /path/to/ssl/private.key;
-    
+
     # Same location blocks as above
 }
 ```
@@ -275,8 +330,9 @@ server {
 ### Docker Production Setup
 
 #### docker-compose.yml
+
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   db:
@@ -330,6 +386,7 @@ volumes:
 ```
 
 #### Backend Dockerfile
+
 ```dockerfile
 FROM python:3.11-slim
 
@@ -346,6 +403,7 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "django_api.wsgi:ap
 ```
 
 #### Frontend Dockerfiles
+
 ```dockerfile
 # Angular Dockerfile
 FROM node:18-alpine AS builder
@@ -363,7 +421,7 @@ CMD ["nginx", "-g", "daemon off;"]
 ```
 
 ```dockerfile
-# React Dockerfile  
+# React Dockerfile
 FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
@@ -380,6 +438,7 @@ CMD ["nginx", "-g", "daemon off;"]
 ### Cloud Deployment
 
 #### Heroku Deployment
+
 ```bash
 # Backend
 cd apps/django-api
@@ -388,7 +447,7 @@ heroku buildpacks:add heroku/python
 git subtree push --prefix apps/django-api heroku main
 
 # Frontend (Angular)
-cd apps/angular-shell  
+cd apps/angular-shell
 heroku create enterprise-dashboard
 heroku buildpacks:add heroku/nodejs
 echo '{"name": "enterprise-dashboard", "scripts": {"postinstall": "npm run build", "start": "http-server dist"}}' > package.json
@@ -396,6 +455,7 @@ git subtree push --prefix apps/angular-shell heroku main
 ```
 
 #### Railway Deployment
+
 ```bash
 # Backend
 railway login
@@ -409,52 +469,56 @@ railway up
 ```
 
 #### Vercel (Frontend)
+
 ```bash
 # Angular
 cd apps/angular-shell
 vercel --prod
 
 # React
-cd apps/react-analytics  
+cd apps/react-analytics
 vercel --prod
 ```
 
 #### DigitalOcean App Platform
+
 ```yaml
 # .do/app.yaml
 name: enterprise-dashboard
 services:
-- name: api
-  source_dir: apps/django-api
-  github:
-    repo: your-username/enterprise-dashboard
-    branch: main
-  run_command: "gunicorn django_api.wsgi:application"
-  environment_slug: python
-  instance_count: 1
-  instance_size_slug: basic-xxs
-  
-- name: angular
-  source_dir: apps/angular-shell
-  github:
-    repo: your-username/enterprise-dashboard
-    branch: main
-  build_command: "npm run build"
-  run_command: "http-server dist -p $PORT"
-  environment_slug: node
-  instance_count: 1
-  instance_size_slug: basic-xxs
+  - name: api
+    source_dir: apps/django-api
+    github:
+      repo: your-username/enterprise-dashboard
+      branch: main
+    run_command: "gunicorn django_api.wsgi:application"
+    environment_slug: python
+    instance_count: 1
+    instance_size_slug: basic-xxs
+
+  - name: angular
+    source_dir: apps/angular-shell
+    github:
+      repo: your-username/enterprise-dashboard
+      branch: main
+    build_command: "npm run build"
+    run_command: "http-server dist -p $PORT"
+    environment_slug: node
+    instance_count: 1
+    instance_size_slug: basic-xxs
 ```
 
 ## 🤝 Development Workflow
 
 ### Adding New Features
+
 1. **Backend**: Create Django models and API endpoints
 2. **Frontend**: Add components in appropriate micro-frontend
 3. **Integration**: Update Module Federation configs
 4. **Testing**: Verify cross-framework communication
 
 ### Code Organization
+
 - Shared types in `shared/` directory
 - Reusable components in respective app `components/` folders
 - API calls organized by domain (auth, dashboards, widgets)
@@ -464,6 +528,7 @@ services:
 ### Production Issues
 
 **Port Conflicts:**
+
 ```bash
 # Check ports
 ss -tlnp | grep :8000
@@ -476,6 +541,7 @@ sudo fuser -k 80/tcp
 ```
 
 **Django Production Issues:**
+
 ```bash
 # Check logs
 docker-compose logs backend
@@ -487,6 +553,7 @@ python manage.py collectstatic --noinput
 ```
 
 **Frontend Build Issues:**
+
 ```bash
 # Module Federation errors
 curl -H "Accept: application/json" http://localhost:8000/api/
@@ -500,6 +567,7 @@ npm run build -- --reset-cache
 ### Performance Monitoring
 
 #### Health Checks
+
 ```bash
 # Backend health
 curl -f http://api.yourdomain.com/api/health || echo "Backend down"
@@ -512,9 +580,10 @@ python manage.py dbshell --command "SELECT 1;"
 ```
 
 #### Log Aggregation (ELK Stack)
+
 ```yaml
 # docker-compose.monitoring.yml
-version: '3.8'
+version: "3.8"
 services:
   elasticsearch:
     image: elasticsearch:8.8.0
@@ -540,18 +609,19 @@ services:
 ```
 
 #### Application Performance Monitoring (APM)
+
 ```javascript
 // Frontend Error Tracking
-window.addEventListener('error', (event) => {
-  fetch('/api/errors/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+window.addEventListener("error", (event) => {
+  fetch("/api/errors/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       error: event.message,
       stack: event.error?.stack,
       url: window.location.href,
-      timestamp: new Date().toISOString()
-    })
+      timestamp: new Date().toISOString(),
+    }),
   });
 });
 ```
@@ -559,6 +629,7 @@ window.addEventListener('error', (event) => {
 ### Security Checklist
 
 #### Django Security
+
 ```bash
 # Security check
 python manage.py check --deploy
@@ -573,6 +644,7 @@ X_FRAME_OPTIONS=DENY
 ```
 
 #### Frontend Security
+
 ```javascript
 // CSP Headers in nginx
 add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.yourdomain.com";
@@ -588,6 +660,7 @@ CORS_ALLOW_CREDENTIALS = True
 ### Backup & Recovery
 
 #### Database Backups
+
 ```bash
 # Automated backup script
 #!/bin/bash
@@ -606,6 +679,7 @@ aws s3 cp $BACKUP_DIR/backup_$DATE.sql s3://your-backup-bucket/
 ```
 
 #### Application Backups
+
 ```bash
 # Frontend assets backup
 tar -czf frontend_backup_$(date +%Y%m%d).tar.gz apps/angular-shell/dist apps/react-analytics/dist
@@ -615,6 +689,7 @@ tar -czf media_backup_$(date +%Y%m%d).tar.gz apps/django-api/media/
 ```
 
 **Django Migrations:**
+
 ```bash
 # Reset migrations
 rm db.sqlite3
@@ -623,6 +698,7 @@ python manage.py migrate
 ```
 
 **Module Federation Issues:**
+
 - Check `webpack.config.js` remote URLs
 - Verify CORS configuration
 - Check network tab for 404 errors
@@ -630,12 +706,14 @@ python manage.py migrate
 ## 📈 Performance Optimizations
 
 ### Implemented
+
 - Lazy loading of micro-frontends
 - Code splitting with Module Federation
 - JWT token refresh management
 - Database query optimization
 
 ### Future Enhancements
+
 - Caching strategies (Redis)
 - CDN integration
 - Bundle size optimization
