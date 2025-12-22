@@ -1,147 +1,181 @@
-import React, { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { TrendingUp, Users, Activity } from 'lucide-react';
-import './analytics-dashboard.css';
+import { useState, useEffect } from "react";
+import { Download, Users, Eye, Clock, TrendingUp } from "lucide-react";
+import StatCard from "../components/StatCard";
+import SimpleBarChart from "../components/SimpleBarChart";
+import DataTable from "../components/DataTable";
+import "./analytics-dashboard.css";
 
 const SimpleAnalytics = () => {
-  const [timeRange, setTimeRange] = useState('7d');
+  const [timeRange, setTimeRange] = useState("7d");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAnimated, setIsAnimated] = useState(false);
 
-  const stats = [
+  // Animación de entrada al montar el componente
+  useEffect(() => {
+    setIsAnimated(true);
+  }, []);
+
+  // Stats data ENTERPRISE con más contexto y trends
+  const statsData = [
     {
-      title: 'Total Visitors',
-      value: '18.2K',
-      change: '+12.5%',
+      title: "Total Visitors",
+      value: "18.2K",
+      previousValue: "16.2K",
+      change: "+12.5%",
       icon: Users,
-      color: '#3b82f6'
+      color: "#3b82f6",
+      trend: "up" as const,
+      subtitle: "Unique visitors",
+      description: "Total number of unique visitors to your platform",
+      progress: 75,
+      target: "24K",
+      format: "number" as const,
     },
     {
-      title: 'Page Views',
-      value: '28.4K',
-      change: '+8.2%',
-      icon: Activity,
-      color: '#10b981'
+      title: "Page Views",
+      value: "28.4K",
+      previousValue: "26.3K",
+      change: "+8.2%",
+      icon: Eye,
+      color: "#10b981",
+      trend: "up" as const,
+      subtitle: "Total page impressions",
+      description: "Total number of page views across all pages",
+      progress: 82,
+      target: "35K",
+      format: "number" as const,
     },
     {
-      title: 'Avg. Session',
-      value: '3m 42s',
-      change: '+5.1%',
+      title: "Avg. Session",
+      value: "3m 42s",
+      previousValue: "3m 33s",
+      change: "+5.1%",
+      icon: Clock,
+      color: "#f59e0b",
+      trend: "up" as const,
+      subtitle: "Time on site",
+      description: "Average time users spend on your platform",
+      progress: 68,
+      target: "4m",
+      format: "time" as const,
+    },
+    {
+      title: "Conversion Rate",
+      value: "3.2%",
+      previousValue: "3.6%",
+      change: "-0.4%",
       icon: TrendingUp,
-      color: '#f59e0b'
+      color: "#ef4444",
+      trend: "down" as const,
+      subtitle: "Goal completion",
+      description: "Percentage of users who complete desired actions",
+      progress: 45,
+      target: "5%",
+      format: "percentage" as const,
     },
-    {
-      title: 'Conversion Rate',
-      value: '3.2%',
-      change: '+2.4%',
-      icon: TrendingUp,
-      color: '#22c55e'
-    }
   ];
 
-  const mockData = [
-    { name: 'Mon', visitors: 4000, views: 12000 },
-    { name: 'Tue', visitors: 3000, views: 9800 },
-    { name: 'Wed', visitors: 3500, views: 14000 },
-    { name: 'Thu', visitors: 2780, views: 11000 },
-    { name: 'Fri', visitors: 1890, views: 8500 },
-    { name: 'Sat', visitors: 2390, views: 7200 },
-    { name: 'Sun', visitors: 3490, views: 9800 }
+  // Chart data mejor estructurado
+  const trafficData = [
+    { name: "Mon", value: 4000, label: "4.0K" },
+    { name: "Tue", value: 3000, label: "3.0K" },
+    { name: "Wed", value: 3500, label: "3.5K" },
+    { name: "Thu", value: 2780, label: "2.8K" },
+    { name: "Fri", value: 1890, label: "1.9K" },
+    { name: "Sat", value: 2390, label: "2.4K" },
+    { name: "Sun", value: 3490, label: "3.5K" },
   ];
+
+  // Table data
+  const topPagesData = [
+    { page: "/dashboard", visitors: "8,421", conversion: "3.2%" },
+    { page: "/analytics", visitors: "6,234", conversion: "2.8%" },
+    { page: "/reports", visitors: "4,892", conversion: "4.1%" },
+    { page: "/settings", visitors: "3,156", conversion: "1.9%" },
+    { page: "/profile", visitors: "2,847", conversion: "0.8%" },
+  ];
+
+  // Simular carga de datos cuando cambia el timeRange
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800); // Simular network delay
+
+    return () => clearTimeout(timer);
+  }, [timeRange]);
+
+  const handleExport = () => {
+    // Simular exportación
+    console.log("Exporting analytics data...");
+    alert("📊 Analytics report would be downloaded in production");
+  };
 
   return (
-    <div className="analytics-dashboard">
-      <div className="analytics-header">
+    <div
+      className={`analytics-dashboard ${
+        isAnimated ? "analytics-dashboard--animated" : ""
+      }`}
+    >
+      {/* Header Section */}
+      <header className="analytics-header">
         <div>
-          <h1 className="analytics-title">Analytics Dashboard</h1>
-          <p className="analytics-subtitle">React Micro-frontend with real-time analytics</p>
+          <h1>Analytics Dashboard</h1>
+          <p className="analytics-subtitle">
+            Real-time insights and performance metrics
+          </p>
         </div>
         <div className="analytics-controls">
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
             className="time-range-select"
+            disabled={isLoading}
           >
             <option value="24h">Last 24 hours</option>
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
             <option value="90d">Last 90 days</option>
           </select>
-          <button className="export-button">
+          <button
+            className="export-button"
+            onClick={handleExport}
+            disabled={isLoading}
+          >
+            <Download size={16} />
             Export Report
           </button>
         </div>
-      </div>
+      </header>
 
-      <div className="stats-grid">
-        {stats.map((stat, index) => {
-          const IconComponent = stat.icon;
-          return (
-            <div key={index} className="stat-card">
-              <div className="stat-header">
-                <div>
-                  <p className="stat-title">{stat.title}</p>
-                  <p className="stat-value">{stat.value}</p>
-                </div>
-                <div className="stat-icon" style={{ color: stat.color }}>
-                  <IconComponent size={24} />
-                </div>
-              </div>
-              <div className="stat-change">
-                <TrendingUp size={16} />
-                <span>{stat.change}</span>
-                <span className="text-gray-500 ml-1">from last month</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Stats Cards Grid */}
+      <section className="stats-grid">
+        {statsData.map((stat, index) => (
+          <StatCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            change={stat.change}
+            icon={stat.icon}
+            color={stat.color}
+            trend={stat.trend}
+            loading={isLoading}
+          />
+        ))}
+      </section>
 
-      <div className="charts-grid">
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Traffic Overview</h3>
-            <Activity size={20} />
-          </div>
-          <div className="simple-chart">
-            {mockData.map((item, index) => (
-              <div key={index} className="chart-bar">
-                <div className="chart-bar-fill" style={{ height: `${(item.visitors / 4000) * 100}%` }}></div>
-                <div className="chart-bar-label">{item.visitors}</div>
-                <div className="chart-day">{item.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Charts Grid */}
+      <section className="charts-grid">
+        <SimpleBarChart
+          data={trafficData}
+          title="Traffic Overview"
+          height={200}
+          color="#3b82f6"
+          loading={isLoading}
+        />
 
-        <div className="chart-card">
-          <h3 className="chart-title">Top Pages</h3>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Page</th>
-                <th>Visitors</th>
-                <th>Conversion</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>/dashboard</td>
-                <td>8,421</td>
-                <td>3.2%</td>
-              </tr>
-              <tr>
-                <td>/analytics</td>
-                <td>6,234</td>
-                <td>2.8%</td>
-              </tr>
-              <tr>
-                <td>/reports</td>
-                <td>4,892</td>
-                <td>4.1%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        <DataTable data={topPagesData} title="Top Pages" loading={isLoading} />
+      </section>
     </div>
   );
 };
