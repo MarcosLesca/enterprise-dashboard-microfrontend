@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   LucideIcon,
   TrendingUp,
@@ -40,6 +40,18 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar mobile para optimizar interacciones
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   if (loading) {
     return (
@@ -109,13 +121,26 @@ const StatCard: React.FC<StatCardProps> = ({
   const trendClass = getTrendColor();
   const trendLabel = getTrendLabel();
 
+  // Mobile optimized interactions
+  const handleCardInteraction = () => {
+    if (isMobile && !isMenuOpen) {
+      setIsHovered(!isHovered);
+    }
+  };
+
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <div
       className={`stat-card ${
         isHovered ? "stat-card--hovered" : ""
-      } ${trendClass}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      } ${trendClass} ${isMobile ? "stat-card--mobile" : ""}`}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
+      onClick={handleCardInteraction}
     >
       {/* Header con icon, title y actions */}
       <div className="stat-card__header">
@@ -124,7 +149,7 @@ const StatCard: React.FC<StatCardProps> = ({
             className="stat-card__icon"
             style={{ backgroundColor: `${color}15`, color }}
           >
-            <IconComponent size={20} strokeWidth={2} />
+            <IconComponent size={isMobile ? 18 : 20} strokeWidth={2} />
           </div>
           <div className="stat-card__title-group">
             <h3 className="stat-card__title">{title}</h3>
@@ -135,15 +160,15 @@ const StatCard: React.FC<StatCardProps> = ({
         <div className="stat-card__actions">
           {description && (
             <button className="stat-card__info" title={description}>
-              <Info size={16} />
+              <Info size={isMobile ? 14 : 16} />
             </button>
           )}
           <div className="stat-card__menu">
             <button
               className="stat-card__menu-button"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={handleMenuToggle}
             >
-              <MoreHorizontal size={16} />
+              <MoreHorizontal size={isMobile ? 14 : 16} />
             </button>
             {isMenuOpen && (
               <div className="stat-card__dropdown">
@@ -172,7 +197,7 @@ const StatCard: React.FC<StatCardProps> = ({
       <div className="stat-card__change">
         {TrendIcon && (
           <div className="stat-card__trend">
-            <TrendIcon size={18} strokeWidth={2.5} />
+            <TrendIcon size={isMobile ? 16 : 18} strokeWidth={2.5} />
             <span className="stat-card__change-value">{change}</span>
           </div>
         )}

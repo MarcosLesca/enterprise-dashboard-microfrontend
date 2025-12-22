@@ -13,6 +13,12 @@ export default defineConfig({
     fs: {
       allow: [".."],
     },
+    headers: {
+      "Cross-Origin-Embedder-Policy": "unsafe-none",
+      "Cross-Origin-Resource-Policy": "cross-origin",
+      "X-Frame-Options": "ALLOWALL",
+      "Content-Security-Policy": "frame-ancestors *",
+    },
   },
 
   preview: {

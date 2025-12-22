@@ -13,6 +13,7 @@ const SimpleAnalytics = () => {
   // Animación de entrada al montar el componente
   useEffect(() => {
     setIsAnimated(true);
+    console.log("✅ SimpleAnalytics mounted successfully");
   }, []);
 
   // Stats data ENTERPRISE con más contexto y trends
@@ -107,8 +108,8 @@ const SimpleAnalytics = () => {
 
   const handleExport = () => {
     // Simular exportación
-    console.log("Exporting analytics data...");
-    alert("📊 Analytics report would be downloaded in production");
+    console.log("📊 Analytics report would be downloaded in production");
+    // Sin alert() para evitar bucles en iframe
   };
 
   return (
@@ -117,6 +118,23 @@ const SimpleAnalytics = () => {
         isAnimated ? "analytics-dashboard--animated" : ""
       }`}
     >
+      {/* Back to Dashboard */}
+      <div className="analytics-navigation">
+        <button
+          className="back-button"
+          onClick={() => {
+            // Solo redirigir si NO estamos en un iframe
+            if (window.self === window.top) {
+              window.location.href = "http://localhost:4200/dashboard";
+            } else {
+              console.log("🔒 Dentro de iframe - sin redirección");
+            }
+          }}
+        >
+          ← Back to Dashboard
+        </button>
+        <div className="analytics-badge">React Micro-frontend</div>
+      </div>
       {/* Header Section */}
       <header className="analytics-header">
         <div>
