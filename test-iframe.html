@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <title>IFrame Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      iframe {
+        width: 800px;
+        height: 600px;
+        border: 2px solid #333;
+        border-radius: 8px;
+      }
+      .test-info {
+        background: #f0f0f0;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-info">
+      <h2>🧪 IFrame Test</h2>
+      <p>URL target: <code>http://localhost:4201/analytics</code></p>
+      <p>
+        Current host:
+        <code
+          ><script>
+            document.write(window.location.origin);
+          </script></code
+        >
+      </p>
+    </div>
+
+    <h3>Direct IFrame:</h3>
+    <iframe
+      src="http://localhost:4201/analytics"
+      title="Analytics Test"
+    ></iframe>
+
+    <script>
+      const iframe = document.querySelector("iframe");
+
+      iframe.onload = function () {
+        console.log("✅ IFrame loaded successfully");
+      };
+
+      iframe.onerror = function () {
+        console.error("❌ IFrame failed to load");
+      };
+    </script>
+  </body>
+</html>

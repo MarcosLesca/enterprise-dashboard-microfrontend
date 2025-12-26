@@ -146,9 +146,9 @@ import { CommonModule } from "@angular/common";
             Quick Actions
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <a
-              href="/dashboard/analytics"
-              class="block p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+            <div
+              (click)="navigateToAnalytics()"
+              class="block p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
             >
               <div class="flex items-center mb-4">
                 <div class="p-2 bg-blue-100 rounded-lg">
@@ -178,7 +178,7 @@ import { CommonModule } from "@angular/common";
               >
                 React Micro-frontend
               </span>
-            </a>
+            </div>
 
             <div
               class="block p-6 bg-white rounded-lg shadow-sm border border-gray-200 opacity-75"
@@ -357,5 +357,9 @@ export class DashboardSimpleComponent implements OnInit {
 
     // Navigate to login
     this.router.navigate(["/auth/login"]);
+  }
+
+  navigateToAnalytics() {
+    this.router.navigate(["/dashboard/analytics"]);
   }
 }

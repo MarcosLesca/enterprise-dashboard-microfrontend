@@ -1,116 +1,173 @@
-import { useState, useEffect } from "react";
-import { Download, Users, Eye, Clock, TrendingUp } from "lucide-react";
+import React, { useCallback, useMemo, useEffect, useState } from "react";
+import {
+  Download,
+  Users,
+  Eye,
+  Clock,
+  TrendingUp,
+  RefreshCw,
+} from "lucide-react";
+
 import StatCard from "../components/StatCard";
 import SimpleBarChart from "../components/SimpleBarChart";
 import DataTable from "../components/DataTable";
+import {
+  useAnalyticsData,
+  useAnalyticsKeyboardShortcuts,
+} from "../hooks/useAnalyticsData";
+import type {
+  SimpleAnalyticsProps,
+  TimeRange,
+  StatCardProps,
+  StatCardData,
+} from "../types/analytics";
+
 import "./analytics-dashboard.css";
 
-const SimpleAnalytics = () => {
-  const [timeRange, setTimeRange] = useState("7d");
-  const [isLoading, setIsLoading] = useState(false);
+// Icon mapping for stat cards
+const ICON_MAP = {
+  "Total Visitors": Users,
+  "Page Views": Eye,
+  "Avg. Session": Clock,
+  "Conversion Rate": TrendingUp,
+} as const;
+
+// Color mapping for consistent theming
+const COLOR_MAP = {
+  blue: "#3b82f6",
+  green: "#10b981",
+  amber: "#f59e0b",
+  red: "#ef4444",
+} as const;
+
+const SimpleAnalytics: React.FC<SimpleAnalyticsProps> = ({
+  initialFilters,
+  config,
+  onDataUpdate,
+  onError,
+}) => {
   const [isAnimated, setIsAnimated] = useState(false);
 
-  // Animación de entrada al montar el componente
+  // Use our custom hook for data management
+  const { data, filters, setFilters, refetch, exportReport } =
+    useAnalyticsData(initialFilters);
+
+  // Entrance animation
   useEffect(() => {
     setIsAnimated(true);
-    console.log("✅ SimpleAnalytics mounted successfully");
   }, []);
 
-  // Stats data ENTERPRISE con más contexto y trends
-  const statsData = [
-    {
-      title: "Total Visitors",
-      value: "18.2K",
-      previousValue: "16.2K",
-      change: "+12.5%",
-      icon: Users,
-      color: "#3b82f6",
-      trend: "up" as const,
-      subtitle: "Unique visitors",
-      description: "Total number of unique visitors to your platform",
-      progress: 75,
-      target: "24K",
-      format: "number" as const,
-    },
-    {
-      title: "Page Views",
-      value: "28.4K",
-      previousValue: "26.3K",
-      change: "+8.2%",
-      icon: Eye,
-      color: "#10b981",
-      trend: "up" as const,
-      subtitle: "Total page impressions",
-      description: "Total number of page views across all pages",
-      progress: 82,
-      target: "35K",
-      format: "number" as const,
-    },
-    {
-      title: "Avg. Session",
-      value: "3m 42s",
-      previousValue: "3m 33s",
-      change: "+5.1%",
-      icon: Clock,
-      color: "#f59e0b",
-      trend: "up" as const,
-      subtitle: "Time on site",
-      description: "Average time users spend on your platform",
-      progress: 68,
-      target: "4m",
-      format: "time" as const,
-    },
-    {
-      title: "Conversion Rate",
-      value: "3.2%",
-      previousValue: "3.6%",
-      change: "-0.4%",
-      icon: TrendingUp,
-      color: "#ef4444",
-      trend: "down" as const,
-      subtitle: "Goal completion",
-      description: "Percentage of users who complete desired actions",
-      progress: 45,
-      target: "5%",
-      format: "percentage" as const,
-    },
-  ];
-
-  // Chart data mejor estructurado
-  const trafficData = [
-    { name: "Mon", value: 4000, label: "4.0K" },
-    { name: "Tue", value: 3000, label: "3.0K" },
-    { name: "Wed", value: 3500, label: "3.5K" },
-    { name: "Thu", value: 2780, label: "2.8K" },
-    { name: "Fri", value: 1890, label: "1.9K" },
-    { name: "Sat", value: 2390, label: "2.4K" },
-    { name: "Sun", value: 3490, label: "3.5K" },
-  ];
-
-  // Table data
-  const topPagesData = [
-    { page: "/dashboard", visitors: "8,421", conversion: "3.2%" },
-    { page: "/analytics", visitors: "6,234", conversion: "2.8%" },
-    { page: "/reports", visitors: "4,892", conversion: "4.1%" },
-    { page: "/settings", visitors: "3,156", conversion: "1.9%" },
-    { page: "/profile", visitors: "2,847", conversion: "0.8%" },
-  ];
-
-  // Simular carga de datos cuando cambia el timeRange
+  // Notify parent of data updates
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800); // Simular network delay
+    if (data && onDataUpdate) {
+      onDataUpdate(data);
+    }
+  }, [data, onDataUpdate]);
 
-    return () => clearTimeout(timer);
-  }, [timeRange]);
+  // Error handling
+  useEffect(() => {
+    if (data?.error && onError) {
+      onError(new Error(data.error));
+    }
+  }, [data?.error, onError]);
 
-  const handleExport = () => {
-    // Simular exportación
-    console.log("📊 Analytics report would be downloaded in production");
-    // Sin alert() para evitar bucles en iframe
-  };
+  // Keyboard shortcuts
+  useAnalyticsKeyboardShortcuts({
+    onExport: () => handleExport(),
+    onRefresh: refetch,
+    onTimeRangeChange: (range: TimeRange) => handleTimeRangeChange(range),
+  });
+
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleTimeRangeChange = useCallback(
+    (range: TimeRange) => {
+      setFilters({ timeRange: range });
+    },
+    [setFilters],
+  );
+
+  const handleExport = useCallback(async () => {
+    try {
+      await exportReport("csv");
+    } catch (error) {
+      console.error("Export failed:", error);
+      if (onError && error instanceof Error) {
+        onError(error);
+      }
+    }
+  }, [exportReport, onError]);
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      await refetch();
+    } catch (error) {
+      console.error("Refresh failed:", error);
+      if (onError && error instanceof Error) {
+        onError(error);
+      }
+    }
+  }, [refetch, onError]);
+
+  // Memoized stat cards data with proper typing
+  const statCardsData = useMemo((): StatCardProps[] | null => {
+    if (!data) return null;
+
+    return data.stats.map((stat: StatCardData) => ({
+      title: stat.title,
+      value: stat.value,
+      previousValue: stat.previousValue,
+      change: stat.change,
+      icon: ICON_MAP[stat.title as keyof typeof ICON_MAP] || Users,
+      color:
+        stat.title === "Total Visitors"
+          ? COLOR_MAP.blue
+          : stat.title === "Page Views"
+            ? COLOR_MAP.green
+            : stat.title === "Avg. Session"
+              ? COLOR_MAP.amber
+              : COLOR_MAP.red,
+      trend: stat.trend,
+      format: stat.format,
+      subtitle: stat.subtitle,
+      description: stat.description,
+      progress: stat.progress,
+      target: stat.target,
+      loading: data.isLoading,
+      config: config,
+    }));
+  }, [data, config]);
+
+  // Loading state
+  if (!data) {
+    return (
+      <div className="analytics-dashboard">
+        <div className="analytics-dashboard__loading">
+          <div className="analytics-dashboard__spinner" />
+          <p>Loading analytics data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (data.error) {
+    return (
+      <div className="analytics-dashboard">
+        <div className="analytics-dashboard__error">
+          <h2>⚠️ Error Loading Data</h2>
+          <p>{data.error}</p>
+          <button
+            type="button"
+            className="export-button"
+            onClick={handleRefresh}
+          >
+            <RefreshCw size={16} />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -118,23 +175,6 @@ const SimpleAnalytics = () => {
         isAnimated ? "analytics-dashboard--animated" : ""
       }`}
     >
-      {/* Back to Dashboard */}
-      <div className="analytics-navigation">
-        <button
-          className="back-button"
-          onClick={() => {
-            // Solo redirigir si NO estamos en un iframe
-            if (window.self === window.top) {
-              window.location.href = "http://localhost:4200/dashboard";
-            } else {
-              console.log("🔒 Dentro de iframe - sin redirección");
-            }
-          }}
-        >
-          ← Back to Dashboard
-        </button>
-        <div className="analytics-badge">React Micro-frontend</div>
-      </div>
       {/* Header Section */}
       <header className="analytics-header">
         <div>
@@ -142,23 +182,44 @@ const SimpleAnalytics = () => {
           <p className="analytics-subtitle">
             Real-time insights and performance metrics
           </p>
+          <small className="analytics-timestamp">
+            Last updated: {data.lastUpdated.toLocaleString()}
+          </small>
         </div>
+
         <div className="analytics-controls">
           <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
+            value={filters.timeRange}
+            onChange={(e) => handleTimeRangeChange(e.target.value as TimeRange)}
             className="time-range-select"
-            disabled={isLoading}
+            disabled={data.isLoading}
           >
             <option value="24h">Last 24 hours</option>
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
             <option value="90d">Last 90 days</option>
           </select>
+
           <button
+            type="button"
+            className="export-button"
+            onClick={handleRefresh}
+            disabled={data.isLoading}
+            title="Refresh data (Ctrl/Cmd + R)"
+          >
+            <RefreshCw
+              size={16}
+              className={data.isLoading ? "animate-spin" : ""}
+            />
+            Refresh
+          </button>
+
+          <button
+            type="button"
             className="export-button"
             onClick={handleExport}
-            disabled={isLoading}
+            disabled={data.isLoading}
+            title="Export report (Ctrl/Cmd + E)"
           >
             <Download size={16} />
             Export Report
@@ -168,31 +229,26 @@ const SimpleAnalytics = () => {
 
       {/* Stats Cards Grid */}
       <section className="stats-grid">
-        {statsData.map((stat, index) => (
-          <StatCard
-            key={index}
-            title={stat.title}
-            value={stat.value}
-            change={stat.change}
-            icon={stat.icon}
-            color={stat.color}
-            trend={stat.trend}
-            loading={isLoading}
-          />
+        {statCardsData?.map((statProps) => (
+          <StatCard key={`stat-${statProps.title}`} {...statProps} />
         ))}
       </section>
 
       {/* Charts Grid */}
       <section className="charts-grid">
         <SimpleBarChart
-          data={trafficData}
+          data={data.traffic}
           title="Traffic Overview"
           height={200}
           color="#3b82f6"
-          loading={isLoading}
+          loading={data.isLoading}
         />
 
-        <DataTable data={topPagesData} title="Top Pages" loading={isLoading} />
+        <DataTable
+          data={data.topPages}
+          title="Top Pages"
+          loading={data.isLoading}
+        />
       </section>
     </div>
   );

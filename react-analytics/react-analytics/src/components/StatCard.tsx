@@ -1,27 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-  LucideIcon,
-  TrendingUp,
-  TrendingDown,
-  MoreHorizontal,
-  Info,
-} from "lucide-react";
-
-interface StatCardProps {
-  title: string;
-  value: string;
-  previousValue?: string;
-  change: string;
-  icon: LucideIcon;
-  color: string;
-  trend?: "up" | "down" | "neutral";
-  loading?: boolean;
-  subtitle?: string;
-  description?: string;
-  progress?: number; // 0-100
-  target?: string;
-  format?: "number" | "percentage" | "time" | "currency";
-}
+import { TrendingUp, TrendingDown, MoreHorizontal, Info } from "lucide-react";
+import type { StatCardProps } from "../types/analytics";
 
 const StatCard: React.FC<StatCardProps> = ({
   title,
@@ -37,6 +16,7 @@ const StatCard: React.FC<StatCardProps> = ({
   progress,
   target,
   format = "number",
+  onClick,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -122,27 +102,118 @@ const StatCard: React.FC<StatCardProps> = ({
   const trendLabel = getTrendLabel();
 
   // Mobile optimized interactions
-  const handleCardInteraction = () => {
-    if (isMobile && !isMenuOpen) {
-      setIsHovered(!isHovered);
-    }
-  };
-
   const handleMenuToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const commonProps = {
+    className: `stat-card ${
+      isHovered ? "stat-card--hovered" : ""
+    } ${trendClass} ${isMobile ? "stat-card--mobile" : ""}`,
+    onMouseEnter: () => !isMobile && setIsHovered(true),
+    onMouseLeave: () => !isMobile && setIsHovered(false),
+  };
+
+  if (onClick) {
+    return (
+      <button type="button" {...commonProps} onClick={onClick}>
+        <div className="stat-card__header">
+          <div className="stat-card__icon-container">
+            <div
+              className="stat-card__icon"
+              style={{ backgroundColor: `${color}15`, color }}
+            >
+              <IconComponent size={isMobile ? 18 : 20} strokeWidth={2} />
+            </div>
+            <div className="stat-card__title-group">
+              <h3 className="stat-card__title">{title}</h3>
+              {subtitle && <p className="stat-card__subtitle">{subtitle}</p>}
+            </div>
+          </div>
+
+          <div className="stat-card__actions">
+            {description && (
+              <button
+                type="button"
+                className="stat-card__info"
+                title={description}
+              >
+                <Info size={isMobile ? 14 : 16} />
+              </button>
+            )}
+            <div className="stat-card__menu">
+              <button
+                type="button"
+                className="stat-card__menu-button"
+                onClick={handleMenuToggle}
+              >
+                <MoreHorizontal size={isMobile ? 14 : 16} />
+              </button>
+              {isMenuOpen && (
+                <div className="stat-card__dropdown">
+                  <button type="button" className="stat-card__dropdown-item">
+                    View Details
+                  </button>
+                  <button type="button" className="stat-card__dropdown-item">
+                    Export
+                  </button>
+                  <button type="button" className="stat-card__dropdown-item">
+                    Configure
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card__value-container">
+          <div className="stat-card__value">{formatValue(value)}</div>
+          {previousValue && (
+            <div className="stat-card__previous">
+              Previous: {formatValue(previousValue)}
+            </div>
+          )}
+        </div>
+
+        <div className="stat-card__change">
+          {TrendIcon && (
+            <div className="stat-card__trend">
+              <TrendIcon size={isMobile ? 16 : 18} strokeWidth={2.5} />
+              <span className="stat-card__change-value">{change}</span>
+            </div>
+          )}
+          <span className="stat-card__change-label">{trendLabel}</span>
+        </div>
+
+        {progress !== undefined && (
+          <div className="stat-card__progress">
+            <div className="stat-card__progress-header">
+              <span className="stat-card__progress-label">Progress</span>
+              {target && (
+                <span className="stat-card__progress-target">
+                  Target: {target}
+                </span>
+              )}
+            </div>
+            <div className="stat-card__progress-bar">
+              <div
+                className="stat-card__progress-fill"
+                style={{
+                  width: `${Math.min(100, Math.max(0, progress))}%`,
+                  backgroundColor: color,
+                }}
+              />
+            </div>
+            <div className="stat-card__progress-value">{progress}%</div>
+          </div>
+        )}
+      </button>
+    );
+  }
+
   return (
-    <div
-      className={`stat-card ${
-        isHovered ? "stat-card--hovered" : ""
-      } ${trendClass} ${isMobile ? "stat-card--mobile" : ""}`}
-      onMouseEnter={() => !isMobile && setIsHovered(true)}
-      onMouseLeave={() => !isMobile && setIsHovered(false)}
-      onClick={handleCardInteraction}
-    >
-      {/* Header con icon, title y actions */}
+    <div {...commonProps}>
       <div className="stat-card__header">
         <div className="stat-card__icon-container">
           <div
@@ -159,12 +230,17 @@ const StatCard: React.FC<StatCardProps> = ({
 
         <div className="stat-card__actions">
           {description && (
-            <button className="stat-card__info" title={description}>
+            <button
+              type="button"
+              className="stat-card__info"
+              title={description}
+            >
               <Info size={isMobile ? 14 : 16} />
             </button>
           )}
           <div className="stat-card__menu">
             <button
+              type="button"
               className="stat-card__menu-button"
               onClick={handleMenuToggle}
             >
@@ -172,18 +248,21 @@ const StatCard: React.FC<StatCardProps> = ({
             </button>
             {isMenuOpen && (
               <div className="stat-card__dropdown">
-                <button className="stat-card__dropdown-item">
+                <button type="button" className="stat-card__dropdown-item">
                   View Details
                 </button>
-                <button className="stat-card__dropdown-item">Export</button>
-                <button className="stat-card__dropdown-item">Configure</button>
+                <button type="button" className="stat-card__dropdown-item">
+                  Export
+                </button>
+                <button type="button" className="stat-card__dropdown-item">
+                  Configure
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Valor principal */}
       <div className="stat-card__value-container">
         <div className="stat-card__value">{formatValue(value)}</div>
         {previousValue && (
@@ -193,7 +272,6 @@ const StatCard: React.FC<StatCardProps> = ({
         )}
       </div>
 
-      {/* Trend y cambio */}
       <div className="stat-card__change">
         {TrendIcon && (
           <div className="stat-card__trend">
@@ -204,7 +282,6 @@ const StatCard: React.FC<StatCardProps> = ({
         <span className="stat-card__change-label">{trendLabel}</span>
       </div>
 
-      {/* Progress bar (opcional) */}
       {progress !== undefined && (
         <div className="stat-card__progress">
           <div className="stat-card__progress-header">
@@ -222,7 +299,7 @@ const StatCard: React.FC<StatCardProps> = ({
                 width: `${Math.min(100, Math.max(0, progress))}%`,
                 backgroundColor: color,
               }}
-            ></div>
+            />
           </div>
           <div className="stat-card__progress-value">{progress}%</div>
         </div>
