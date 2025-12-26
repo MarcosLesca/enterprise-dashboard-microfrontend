@@ -1,4 +1,4 @@
-django==6.0
-djangorestframework==3.16.1
-django-cors-headers==4.9.0
-djangorestframework-simplejwt==5.5.1
+# Full requirements (including production dependencies)
+# For production deployments
+-r requirements-base.txt
+-r requirements-prod.txt

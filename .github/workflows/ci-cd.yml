@@ -1,0 +1,278 @@
+name: 🚀 Enterprise Dashboard CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # 🧪 Backend Tests
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_enterprise_dashboard
+          POSTGRES_USER: test_user
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('django-api/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: 📥 Install dependencies
+        run: |
+          cd django-api
+          pip install -r requirements.txt
+
+      - name: 🔧 Environment setup
+        run: |
+          cd django-api
+          cat << EOF > .env
+          SECRET_KEY=test-secret-key-for-github-actions
+          DEBUG=True
+          DATABASE_URL=postgres://test_user:test_password@localhost:5432/test_enterprise_dashboard
+          ALLOWED_HOSTS=localhost,127.0.0.1
+          EOF
+
+      - name: 🗄️ Run migrations
+        run: |
+          cd django-api
+          python manage.py makemigrations
+          python manage.py migrate
+
+      - name: 🧪 Run Django tests
+        run: |
+          cd django-api
+          python manage.py test
+
+      - name: 🔍 Django security check
+        run: |
+          cd django-api
+          python manage.py check --deploy
+
+    # 🔧 Frontend Tests (Angular)
+  angular-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: 📥 Install dependencies
+        run: |
+          npm ci
+          cd angular-shell
+          npm ci
+
+      - name: 🔍 Lint Angular code
+        run: |
+          cd angular-shell
+          npm run lint
+
+      - name: 🧪 Run Angular tests
+        run: |
+          cd angular-shell
+          npm run test:ci
+
+      - name: 🏗️ Build Angular
+        run: |
+          cd angular-shell
+          npm run build
+
+    # 🔧 Frontend Tests (React)
+  react-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: 📥 Install dependencies
+        run: |
+          cd react-analytics/react-analytics
+          npm ci
+
+      - name: 🔍 Lint React code
+        run: |
+          cd react-analytics/react-analytics
+          npm run lint
+
+      - name: 🧪 Run React tests
+        run: |
+          cd react-analytics/react-analytics
+          npm run test:ci
+
+      - name: 🏗️ Build React
+        run: |
+          cd react-analytics/react-analytics
+          npm run build
+
+    # 🐳 Docker Build & Security Scan
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, angular-tests, react-tests]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: 📤 Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: 🛡️ CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          languages: python, javascript
+
+    # 🏗️ Build and Push Docker Images
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, angular-tests, react-tests, security-scan]
+    if: github.ref == 'refs/heads/main'
+
+    outputs:
+      django-image: ${{ steps.meta-django.outputs.tags }}
+      angular-image: ${{ steps.meta-angular.outputs.tags }}
+      react-image: ${{ steps.meta-react.outputs.tags }}
+
+    strategy:
+      matrix:
+        service: [django-api, angular-shell, react-analytics]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📝 Extract metadata
+        id: meta-${{ matrix.service }}
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 🐳 Build and push Docker image
+        id: build-${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta-${{ matrix.service }}.outputs.tags }}
+          labels: ${{ steps.meta-${{ matrix.service }}.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 🚀 Deploy to Staging
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy to staging
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "Django Image: ${{ needs.build-and-push.outputs.django-image }}"
+          echo "Angular Image: ${{ needs.build-and-push.outputs.angular-image }}"
+          echo "React Image: ${{ needs.build-and-push.outputs.react-image }}"
+          # Add your staging deployment logic here
+          # kubectl apply -f k8s/staging/
+          # docker-compose -f docker-compose.staging.yml up -d
+
+  # 🚀 Deploy to Production
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy to production
+        run: |
+          echo "🚀 Deploying to production environment..."
+          echo "Django Image: ${{ needs.build-and-push.outputs.django-image }}"
+          echo "Angular Image: ${{ needs.build-and-push.outputs.angular-image }}"
+          echo "React Image: ${{ needs.build-and-push.outputs.react-image }}"
+          # Add your production deployment logic here
+          # kubectl apply -f k8s/production/
+          # docker-compose -f docker-compose.prod.yml up -d

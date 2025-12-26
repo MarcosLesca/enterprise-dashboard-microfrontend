@@ -1,6 +1,47 @@
 version: "3.8"
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: enterprise-postgres
+    environment:
+      - POSTGRES_DB=enterprise_dashboard
+      - POSTGRES_USER=enterprise_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-EnterpriseDB123!}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./django-api/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - enterprise-network
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U enterprise_user -d enterprise_dashboard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: enterprise-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-Redis123!}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - enterprise-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   # Django API
   django-api:
     build:
@@ -11,10 +52,18 @@ services:
       - "8000:8000"
     environment:
       - DEBUG=0
-      - DATABASE_URL=sqlite:///db.sqlite3
-      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-production-change-this}
+      - DATABASE_URL=postgres://enterprise_user:${DB_PASSWORD:-EnterpriseDB123!}@postgres:5432/enterprise_dashboard
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-Redis123!}@redis:6379/0
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,yourdomain.com,www.yourdomain.com
     volumes:
       - django_data:/app/data
+      - static_volume:/app/staticfiles
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - enterprise-network
@@ -35,8 +84,10 @@ services:
       - "4200:80"
     environment:
       - NODE_ENV=production
+      - API_BASE_URL=http://django-api:8000/api
     depends_on:
-      - django-api
+      django-api:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - enterprise-network
@@ -57,9 +108,10 @@ services:
       - "4201:80"
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=http://django-api:8000/api
     depends_on:
-      - django-api
+      django-api:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - enterprise-network
@@ -91,7 +143,13 @@ services:
       - production
 
 volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
   django_data:
+    driver: local
+  static_volume:
     driver: local
 
 networks:

@@ -3,6 +3,7 @@
 # Enterprise Dashboard - Modern Development Launcher
 # Author: Senior Architect
 # Description: Levanta todo el proyecto de micro-frontends de forma confiable
+# Updated: PostgreSQL + Redis support + production-ready configuration
 
 set -euo pipefail
 
@@ -16,10 +17,15 @@ readonly MAGENTA='\033[0;35m'
 readonly BOLD='\033[1m'
 readonly NC='\033[0m'
 
-# Configuración de puertos
+# Development mode: 'dev' (SQLite) or 'prod' (PostgreSQL+Redis)
+DEV_MODE=${DEV_MODE:-dev}
+
+# Service ports
 readonly DJANGO_PORT=8000
 readonly ANGULAR_PORT=4200
 readonly REACT_PORT=4201
+readonly POSTGRES_PORT=5432
+readonly REDIS_PORT=6379
 
 # Directorios
 readonly PROJECT_ROOT="$(pwd)"
@@ -31,6 +37,8 @@ readonly REACT_DIR="$PROJECT_ROOT/react-analytics/react-analytics"
 DJANGO_PID=""
 ANGULAR_PID=""
 REACT_PID=""
+POSTGRES_PID=""
+REDIS_PID=""
 
 # Logging moderno
 log() {
@@ -55,6 +63,15 @@ log() {
             echo -e "\n${BOLD}${MAGENTA}==== $message ====${NC}"
             ;;
     esac
+}
+
+# Verificar si Docker está disponible
+check_docker() {
+    if command -v docker &> /dev/null && docker info &> /dev/null; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # Función para verificar dependencias usando ripgrep
@@ -82,6 +99,15 @@ check_dependencies() {
         missing_deps+=("python3")
     else
         log "SUCCESS" "Python $(python3 --version)"
+    fi
+    
+    # Verificar Docker si está en modo prod
+    if [[ "$DEV_MODE" == "prod" ]]; then
+        if check_docker; then
+            log "SUCCESS" "Docker $(docker --version)"
+        else
+            missing_deps+=("docker")
+        fi
     fi
     
     # Verificar herramientas modernas
@@ -145,6 +171,74 @@ install_node_deps() {
     fi
 }
 
+# Iniciar servicios de base de datos (modo producción)
+start_database_services() {
+    if [[ "$DEV_MODE" != "prod" ]]; then
+        return 0
+    fi
+    
+    log "HEADER" "🗄️ INICIANDO SERVICIOS DE BASE DE DATOS"
+    
+    # Verificar si ya están corriendo
+    if is_port_in_use $POSTGRES_PORT && is_port_in_use $REDIS_PORT; then
+        log "INFO" "PostgreSQL y Redis ya están corriendo"
+        return 0
+    fi
+    
+    # Iniciar PostgreSQL
+    if ! is_port_in_use $POSTGRES_PORT; then
+        log "INFO" "Iniciando PostgreSQL en puerto $POSTGRES_PORT..."
+        docker run -d \
+            --name enterprise-postgres-dev \
+            -e POSTGRES_DB=enterprise_dashboard \
+            -e POSTGRES_USER=enterprise_user \
+            -e POSTGRES_PASSWORD=EnterpriseDB123! \
+            -p $POSTGRES_PORT:5432 \
+            -v postgres_data_dev:/var/lib/postgresql/data \
+            postgres:15-alpine > /dev/null 2>&1 &
+        POSTGRES_PID=$!
+        
+        # Esperar a que PostgreSQL esté listo
+        for i in {1..10}; do
+            if docker exec enterprise-postgres-dev pg_isready -U enterprise_user -d enterprise_dashboard &>/dev/null; then
+                log "SUCCESS" "PostgreSQL iniciado (PID: $POSTGRES_PID)"
+                break
+            fi
+            sleep 2
+        done
+    fi
+    
+    # Iniciar Redis
+    if ! is_port_in_use $REDIS_PORT; then
+        log "INFO" "Iniciando Redis en puerto $REDIS_PORT..."
+        docker run -d \
+            --name enterprise-redis-dev \
+            -p $REDIS_PORT:6379 \
+            redis:7-alpine redis-server --appendonly yes > /dev/null 2>&1 &
+        REDIS_PID=$!
+        log "SUCCESS" "Redis iniciado (PID: $REDIS_PID)"
+    fi
+}
+
+# Detener servicios de base de datos
+stop_database_services() {
+    if [[ "$DEV_MODE" != "prod" ]]; then
+        return 0
+    fi
+    
+    log "INFO" "Deteniendo servicios de base de datos..."
+    
+    # Detener contenedores
+    docker stop enterprise-postgres-dev enterprise-redis-dev 2>/dev/null || true
+    docker rm enterprise-postgres-dev enterprise-redis-dev 2>/dev/null || true
+    
+    # Matar PIDs
+    [[ -n "$POSTGRES_PID" ]] && kill "$POSTGRES_PID" 2>/dev/null || true
+    [[ -n "$REDIS_PID" ]] && kill "$REDIS_PID" 2>/dev/null || true
+    
+    log "SUCCESS" "Servicios de base de datos detenidos"
+}
+
 # Configurar entorno Python/Django
 setup_python_env() {
     log "HEADER" "🐍 CONFIGURANDO ENTORNO PYTHON"
@@ -160,10 +254,76 @@ setup_python_env() {
     # Activar y actualizar pip
     source venv/bin/activate
     
-    # Instalar/actualizar dependencias
-    if [[ -f "requirements.txt" ]]; then
-        log "INFO" "Instalando dependencias de Python..."
-        pip install -r requirements.txt --quiet
+    # Instalar dependencias base (siempre necesarias)
+    log "INFO" "Instalando dependencias base de Python..."
+    if [[ -f "requirements-base.txt" ]]; then
+        pip install -r requirements-base.txt --quiet
+    else
+        log "WARN" "No se encontró requirements-base.txt, instalando manualmente..."
+        pip install --quiet django==6.0 djangorestframework==3.16.1 \
+            django-cors-headers==4.9.0 djangorestframework-simplejwt==5.5.1 \
+            python-decouple==3.8 dj-database-url==3.0.1 \
+            gunicorn==23.0.0 whitenoise==6.8.2
+    fi
+    
+    # Instalar dependencias de producción solo en modo prod
+    if [[ "$DEV_MODE" == "prod" ]]; then
+        log "INFO" "Instalando dependencias de producción (PostgreSQL)..."
+        
+        # Intentar instalar dependencias de sistema primero
+        install_postgres_system_deps() {
+            if command -v apt-get &> /dev/null; then
+                sudo apt-get update -qq && sudo apt-get install -y libpq-dev postgresql-client &>/dev/null || true
+            elif command -v brew &> /dev/null; then
+                brew install postgresql libpq &>/dev/null || true
+            elif command -v yum &> /dev/null; then
+                sudo yum install -y postgresql-devel postgresql &>/dev/null || true
+            fi
+        }
+        
+        # Instalar dependencias del sistema
+        install_postgres_system_deps
+        
+        # Instalar PostgreSQL dependencies
+        if [[ -f "requirements-prod.txt" ]]; then
+            pip install -r requirements-prod.txt --quiet || {
+                log "WARN" "Falló requirements-prod.txt, intentando instalación manual..."
+                pip install --quiet psycopg2-binary==2.9.11 redis==5.1.1 sentry-sdk==1.40.6 || {
+                    log "ERROR" "❌ No se pudo instalar PostgreSQL dependencies."
+                    log "INFO" "💡 Para instalar PostgreSQL dependencies manualmente:"
+                    log "INFO" "   Ubuntu/Debian: sudo apt-get install libpq-dev"
+                    log "INFO" "   macOS: brew install postgresql"
+                    log "INFO" "   CentOS/RHEL: sudo yum install postgresql-devel"
+                    log "WARN" "🔄 Cambiando a modo desarrollo (SQLite)..."
+                    export DEV_MODE="dev"
+                }
+            }
+        fi
+    fi
+    
+    # Configurar environment variables según modo
+    if [[ "$DEV_MODE" == "prod" ]]; then
+        log "INFO" "Configurando modo producción (PostgreSQL + Redis)..."
+        export DATABASE_URL="postgres://enterprise_user:EnterpriseDB123!@localhost:$POSTGRES_PORT/enterprise_dashboard"
+        export REDIS_URL="redis://localhost:$REDIS_PORT/0"
+        export DEBUG=False
+        export ALLOWED_HOSTS="localhost,127.0.0.1,0.0.0.0"
+    else
+        log "INFO" "Configurando modo desarrollo (SQLite)..."
+        export DATABASE_URL="sqlite:///db.sqlite3"
+        export DEBUG=True
+        export ALLOWED_HOSTS="localhost,127.0.0.1,0.0.0.0"
+    fi
+    
+    # Crear archivo .env si no existe
+    if [[ ! -f ".env" ]]; then
+        log "INFO" "Creando archivo .env..."
+        cat > .env << EOF
+SECRET_KEY=django-insecure-development-key-only-change-in-production
+DEBUG=$DEBUG
+DATABASE_URL=$DATABASE_URL
+ALLOWED_HOSTS=$ALLOWED_HOSTS
+EOF
     fi
     
     # Correr migraciones
@@ -175,7 +335,7 @@ setup_python_env() {
     echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(email='admin@enterprise.com').exists() or User.objects.create_superuser('admin@enterprise.com', 'admin', 'Enterprise123!')" | python manage.py shell
     
     cd "$PROJECT_ROOT"
-    log "SUCCESS" "Entorno Python configurado"
+    log "SUCCESS" "Entorno Python configurado ($DEV_MODE mode)"
 }
 
 # Iniciar Django API
@@ -265,6 +425,17 @@ show_status() {
     echo -e "   • React Analytics: ${BLUE}http://localhost:$REACT_PORT${NC}"
     echo -e "   • Django API: ${BLUE}http://localhost:$DJANGO_PORT${NC}"
     echo -e "   • Django Admin: ${BLUE}http://localhost:$DJANGO_PORT/admin/${NC}"
+    
+    if [[ "$DEV_MODE" == "prod" ]]; then
+        echo -e "   • PostgreSQL: ${BLUE}localhost:$POSTGRES_PORT${NC}"
+        echo -e "   • Redis: ${BLUE}localhost:$REDIS_PORT${NC}"
+        echo
+        echo -e "${BOLD}${YELLOW}🔧 MODO: Producción (PostgreSQL + Redis)${NC}"
+    else
+        echo
+        echo -e "${BOLD}${YELLOW}🔧 MODO: Desarrollo (SQLite)${NC}"
+    fi
+    
     echo
     echo -e "${BOLD}${YELLOW}🔑 CREDENCIALES POR DEFECTO:${NC}"
     echo -e "   • Email: ${CYAN}admin@enterprise.com${NC}"
@@ -274,8 +445,13 @@ show_status() {
     echo -e "   • Ver logs: ${CYAN}tail -f .django.log .angular.log .react.log${NC}"
     echo -e "   • Detener todo: ${CYAN}./dev.sh stop${NC}"
     echo -e "   • Ver estado: ${CYAN}./dev.sh status${NC}"
+    if [[ "$DEV_MODE" == "dev" ]]; then
+        echo -e "   • Modo producción: ${CYAN}DEV_MODE=prod ./dev.sh start${NC}"
+    else
+        echo -e "   • Modo desarrollo: ${CYAN}DEV_MODE=dev ./dev.sh start${NC}"
+    fi
     echo
-    echo -e "${BOLD}${GREEN}⚡ Micro-frontend architecture running!${NC}"
+    echo -e "${BOLD}${GREEN}⚡ Enterprise Dashboard running in $DEV_MODE mode!${NC}"
     echo
 }
 
@@ -288,11 +464,18 @@ cleanup() {
     [[ -n "$DJANGO_PID" ]] && kill "$DJANGO_PID" 2>/dev/null || true
     [[ -n "$ANGULAR_PID" ]] && kill "$ANGULAR_PID" 2>/dev/null || true
     [[ -n "$REACT_PID" ]] && kill "$REACT_PID" 2>/dev/null || true
+    [[ -n "$POSTGRES_PID" ]] && kill "$POSTGRES_PID" 2>/dev/null || true
+    [[ -n "$REDIS_PID" ]] && kill "$REDIS_PID" 2>/dev/null || true
+    
+    # Detener servicios de base de datos
+    stop_database_services
     
     # Matar por puerto (fallback)
     free_port $DJANGO_PORT
     free_port $ANGULAR_PORT
     free_port $REACT_PORT
+    free_port $POSTGRES_PORT
+    free_port $REDIS_PORT
     
     # Limpiar logs
     rm -f .django.log .angular.log .react.log
@@ -304,10 +487,14 @@ cleanup() {
 # Mostrar ayuda
 show_help() {
     cat << 'EOF'
-🎯 Enterprise Dashboard - Development Launcher
+ 🎯 Enterprise Dashboard - Development Launcher (Updated!)
 
 USO:
-    ./dev.sh [COMANDO]
+    ./dev.sh [OPCIONES] [COMANDO]
+
+OPCIONES:
+    --dev, --development    Modo desarrollo (SQLite) - default
+    --prod, --production    Modo producción (PostgreSQL + Redis)
 
 COMANDOS:
     start           Inicia todos los servicios (default)
@@ -319,10 +506,18 @@ COMANDOS:
     help            Muestra esta ayuda
 
 EJEMPLOS:
-    ./dev.sh                # Inicia todo
-    ./dev.sh stop           # Detiene todo
-    ./dev.sh restart        # Reinicia todo
-    ./dev.sh logs           # Ver logs vivos
+    ./dev.sh                    # Inicia en modo desarrollo (SQLite)
+    ./dev.sh --prod start       # Inicia en modo producción (PostgreSQL + Redis)
+    ./dev.sh --dev start        # Inicia en modo desarrollo explícitamente
+    ./dev.sh stop               # Detiene todo sin importar el modo
+    ./dev.sh restart            # Reinicia con el último modo usado
+
+MODOS:
+    --dev:  SQLite (rápido, para desarrollo rápido)
+    --prod: PostgreSQL + Redis (más cerca de producción)
+
+ENVIRONMENT VARIABLES:
+    DEV_MODE=dev|prod   También se puede setear como variable de entorno
 
 EOF
 }
@@ -349,6 +544,23 @@ show_services_status() {
     else
         echo -e "${RED}❌ React Analytics ($REACT_PORT): STOPPED${NC}"
     fi
+    
+    if [[ "$DEV_MODE" == "prod" ]]; then
+        if is_port_in_use $POSTGRES_PORT; then
+            echo -e "${GREEN}✅ PostgreSQL ($POSTGRES_PORT): RUNNING${NC}"
+        else
+            echo -e "${RED}❌ PostgreSQL ($POSTGRES_PORT): STOPPED${NC}"
+        fi
+        
+        if is_port_in_use $REDIS_PORT; then
+            echo -e "${GREEN}✅ Redis ($REDIS_PORT): RUNNING${NC}"
+        else
+            echo -e "${RED}❌ Redis ($REDIS_PORT): STOPPED${NC}"
+        fi
+    fi
+    
+    echo
+    echo -e "${BOLD}${YELLOW}🔧 Current mode: $DEV_MODE${NC}"
     echo
 }
 
@@ -383,14 +595,32 @@ clean_project() {
 
 # MAIN - Lógica principal
 main() {
+    # Parsear argumentos para modo
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --prod|--production)
+                export DEV_MODE="prod"
+                shift
+                ;;
+            --dev|--development)
+                export DEV_MODE="dev"
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+    
     # Configurar traps para limpieza
     trap cleanup SIGINT SIGTERM
     
     case "${1:-start}" in
         "start"|"dev"|"")
-            log "HEADER" "🎯 ENTERPRISE DASHBOARD - INICIANDO"
+            log "HEADER" "🎯 ENTERPRISE DASHBOARD - INICIANDO ($DEV_MODE MODE)"
             check_dependencies
             install_node_deps
+            start_database_services
             setup_python_env
             start_django
             start_angular
